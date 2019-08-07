@@ -1,0 +1,15 @@
+<application xmlns="https://online.moysklad.ru/xml/ns/appstore/app/v1"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://online.moysklad.ru/xml/ns/appstore/app/v1 https://online.moysklad.ru/xml/ns/appstore/app/v1/application-1.0.0.xsd">
+    <iframe>
+        <sourceUrl>https://dummyapp.test.lognex.ru/iframe.php</sourceUrl>
+    </iframe>
+    <vendorApi>
+        <endpointBase>https://dummyapp.test.lognex.ru/vendor-endpoint.php</endpointBase>
+    </vendorApi>
+    <access>
+        <!--<resource>https://marketplace.sandbox.moysklad.ru/api/remap/1.2</resource>-->
+        <resource>https://online-marketplace-2.testms.lognex.ru/api/remap/1.2</resource>
+        <scope>admin</scope>
+    </access>
+</application>
