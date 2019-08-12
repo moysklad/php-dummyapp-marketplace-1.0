@@ -12,16 +12,20 @@ $uid = $employee->uid;
 $fio = $employee->shortFio;
 $accountId = $employee->accountId;
 
-//$_SESSION['accountId'] = $accountId;
-
-$isAdmin = stripos($uid, 'admin@') !== false; // todo !!! use permissions instead of uid analyze
+$isAdmin = $employee->permissions->admin->view;
 
 $app = AppInstance::loadApp($accountId);
 $infoMessage = $app->infoMessage;
+$store = $app->store;
 
 $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
 
-$accessToken = 'TODO !!!';
-
+if ($isAdmin) {
+    $stores = jsonApi()->stores();
+    $storesValues = [];
+    foreach ($stores->rows as $v) {
+        $storesValues[] = $v->name;
+    }
+}
 
 require 'iframe.html.php';

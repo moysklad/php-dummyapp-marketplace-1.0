@@ -9,29 +9,35 @@ require_once 'jwt.lib.php';
 //
 
 class AppConfig {
-//    var $appId = "ac02196f-e0ea-4818-b142-991455ea62bc";
-//    var $appUid = "dummyapp.lognex";
-//    var $secretKey = 'xRmHEAsIRSQAQv556CTRtL51W9rrgTjgSJ48rL3UgRE2UscvqDxRbZFbSueQaO8FXJEIGIIdkGFW6eMwtJUB8TnciHcBeyGP5dgIURjLKaORAARrqDvg6hDSmbdFugzR';
-    var $appId = "a90b71b7-1c57-4e69-8e8e-58e1476135da";
-    var $appUid = "dummyapp2.lognex";
-    var $secretKey = 'nAbioPF2HAuYvrYpOikD3LYnNTzkYGugXqRT74hUGD47BeLEY7Zo7rHM4EK0wcj4oSAycrDpbVYhO44XdmKYtTEKzepbO4g6LzfYfU7c1ILRTfcGJOPpJTMkV8mwltJx';
 
-    var $moyskladVendorApiEndpointUrl = 'https://online-marketplace-2.testms.lognex.ru/api/vendor/1.0';
+    var $appId = 'APP-ID';
+    var $appUid = 'APP-UID';
+    var $secretKey = 'SECRET-KEY';
+
+    var $appBaseUrl = 'APP-BASE-URL';
+
+    var $moyskladVendorApiEndpointUrl = 'https://marketplace.sandbox.moysklad.ru/api/vendor/1.0';
+    var $moyskladJsonApiEndpointUrl = 'https://marketplace.sandbox.moysklad.ru/api/remap/1.2';
+
+    public function __construct(array $cfg)
+    {
+        foreach ($cfg as $k => $v) {
+            $this->$k = $v;
+        }
+    }
 }
 
-$cfg = new AppConfig();
+$cfg = new AppConfig(require('config.php'));
 
 function cfg(): AppConfig {
     return $GLOBALS['cfg'];
 }
 
 //
-//  Vendor API
+//  Vendor API 1.0
 //
 
 class VendorApi {
-
-    // todo !!! add logging
 
     function context(string $contextKey) {
         return $this->request('POST', '/context/' . $contextKey);
@@ -44,35 +50,41 @@ class VendorApi {
     }
 
     private function request(string $method, $path, $body = null) {
-        $url = cfg()->moyskladVendorApiEndpointUrl . $path;
-        loginfo("APP => MOYSKLAD", "Send: $method $url\n$body");
-
-
-        $opts = $body
-            ? array('http' =>
-                array(
-                    'method'  => $method,
-                    'header'  => array('Authorization: Bearer ' . buildJWT(), 'Content-Type: application/json'),
-                    'content' => json_encode($body)
-                )
-            )
-            : array('http' =>
-                array(
-                    'method'  => $method,
-                    'header'  => 'Authorization: Bearer ' . buildJWT()
-                )
-            );
-        $context = stream_context_create($opts);
-        $result = file_get_contents($url, false, $context);
-        return json_decode($result);
+        return makeHttpRequest(
+            $method,
+            cfg()->moyskladVendorApiEndpointUrl . $path,
+            buildJWT(),
+            $body);
     }
 
+}
+
+function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null) {
+    loginfo("APP => MOYSKLAD", "Send: $method $url\n$body");
+
+    $opts = $body
+        ? array('http' =>
+            array(
+                'method'  => $method,
+                'header'  => array('Authorization: Bearer ' . $bearerToken, "Content-type: application/json"),
+                'content' => $body
+            )
+        )
+        : array('http' =>
+            array(
+                'method'  => $method,
+                'header'  => 'Authorization: Bearer ' . $bearerToken
+            )
+        );
+    $context = stream_context_create($opts);
+    $result = file_get_contents($url, false, $context);
+    return json_decode($result);
 }
 
 $vendorApi = new VendorApi();
 
 function vendorApi(): VendorApi {
-    return $GLOBALS['vendorApi']; // todo !!! implement
+    return $GLOBALS['vendorApi'];
 }
 
 function buildJWT() {
@@ -83,6 +95,35 @@ function buildJWT() {
         "jti" => bin2hex(random_bytes(32))
     );
     return JWT::encode($token, cfg()->secretKey);
+}
+
+
+//
+//  JSON API 1.2
+//
+
+class JsonApi {
+
+    private $accessToken;
+
+    function __construct(string $accessToken) {
+        $this->accessToken = $accessToken;
+    }
+
+    function stores() {
+        return makeHttpRequest(
+            'GET',
+            cfg()->moyskladJsonApiEndpointUrl . '/entity/store',
+            $this->accessToken);
+    }
+
+}
+
+function jsonApi(): JsonApi {
+    if (!$GLOBALS['jsonApi']) {
+        $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
+    }
+    return $GLOBALS['jsonApi'];
 }
 
 //
@@ -98,6 +139,8 @@ function loginfo($name, $msg) {
 //  AppInstance state
 //
 
+$currentAppInstance = null;
+
 class AppInstance {
 
     const UNKNOWN = 0;
@@ -107,11 +150,19 @@ class AppInstance {
     var $appId;
     var $accountId;
     var $infoMessage;
-    var $skladName;
+    var $store;
 
     var $accessToken;
 
     var $status = AppInstance::UNKNOWN;
+
+    static function get(): AppInstance {
+        $app = $GLOBALS['currentAppInstance'];
+        if (!$app) {
+            throw new InvalidArgumentException("There is no current app instance context");
+        }
+        return $app;
+    }
 
     public function __construct($appId, $accountId)
     {
@@ -153,9 +204,12 @@ class AppInstance {
     static function load($appId, $accountId): AppInstance {
         $data = @file_get_contents("data/$appId.$accountId.app");
         if ($data === false) {
-            return new AppInstance($appId, $accountId);
+            $app = new AppInstance($appId, $accountId);
+        } else {
+            $app = unserialize($data);
         }
-        return unserialize($data);
+        $GLOBALS['currentAppInstance'] = $app;
+        return $app;
     }
 
 }

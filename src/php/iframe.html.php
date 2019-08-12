@@ -51,9 +51,6 @@
     <li>Текущий пользователь: <?=$uid?> (<?=$fio?>)</li>
     <li>Идентификатор аккаунта: <?=$accountId?></li>
     <li>Уровень доступа: <b><?= $isAdmin ? 'администратор аккаунта' : 'простой пользователь'?></b></li>
-<!--    --><?php //if ($isAdmin) { ?>
-<!--        <li><i>access_token: --><?//=$accessToken?><!--</i></li>-->
-<!--    --><?php //} ?>
 </ul>
 
 <h2>Состояние приложения</h2>
@@ -64,7 +61,7 @@
     ?>
     <p>
         Сообщение: <?=$infoMessage?><br>
-<!--        Выбран склад: --><?//=$selectedStoreName?>
+        Выбран склад: <?=$store?>
     </p>
     <?php } ?>
 </div>
@@ -73,24 +70,17 @@
 
 <?php
 if ($isAdmin) {
-    ?>
-
-    <?php
-}
-?>
-
-
-<?php
-if ($isAdmin) {
 ?>
 
 <form method="post" action="update-settings.php">
     Укажите сообщение:
         <input type="text" size="50" name="infoMessage"><br>
-<!--    Выберите склад:-->
-<!--        <select name="store">-->
-<!--            <option value="TODO !!!">TODO !!!</option>-->
-<!--        </select><br>-->
+    Выберите склад:
+        <select name="store">
+            <?php foreach ($storesValues as $v) { ?>
+            <option value="<?=$v?>"><?=$v?></option>
+            <?php } ?>
+        </select><br>
     <input type="hidden" name="accountId" value="<?=$accountId?>"/>
     <input type="submit">
 </form>

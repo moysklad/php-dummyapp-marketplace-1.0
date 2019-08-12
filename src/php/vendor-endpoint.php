@@ -7,8 +7,6 @@ $path = $_SERVER['PATH_INFO'];
 
 loginfo("MOYSKLAD => APP", "Received: method=$method, path=$path");
 
-// todo !!! handle different methods
-
 $pp = explode('/', $path);
 $n = count($pp);
 $appId = $pp[$n - 2];
@@ -29,6 +27,7 @@ $replyStatus = true;
 switch ($method) {
     case 'PUT':
         if (!$app->getStatusName()) {
+            $app->accessToken = $accessToken;
             $app->status = AppInstance::SETTINGS_REQUIRED;
             $app->persist();
         }
