@@ -16,8 +16,8 @@ class AppConfig {
 
     var $appBaseUrl = 'APP-BASE-URL';
 
-    var $moyskladVendorApiEndpointUrl = 'https://marketplace.sandbox.moysklad.ru/api/vendor/1.0';
-    var $moyskladJsonApiEndpointUrl = 'https://marketplace.sandbox.moysklad.ru/api/remap/1.2';
+    var $moyskladVendorApiEndpointUrl = 'https://online.moysklad.ru/api/vendor/1.0';
+    var $moyskladJsonApiEndpointUrl = 'https://online.moysklad.ru/api/remap/1.2';
 
     public function __construct(array $cfg)
     {
