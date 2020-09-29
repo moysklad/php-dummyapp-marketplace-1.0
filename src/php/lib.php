@@ -130,9 +130,15 @@ function jsonApi(): JsonApi {
 //  Logging
 //
 
+if (!isset($logDirRoot)) {
+    $logDirRoot = '';
+}
+
 function loginfo($name, $msg) {
-    @mkdir('logs');
-    file_put_contents('logs/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
+    global $logDirRoot;
+    $logDir = $logDirRoot . 'logs';
+    @mkdir($logDir);
+    file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
 }
 
 //

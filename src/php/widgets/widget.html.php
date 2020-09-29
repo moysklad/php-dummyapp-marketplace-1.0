@@ -55,7 +55,7 @@
         }
 
         function logMessage(prefix, msg) {
-            var messageAsString = JSON.stringify(msg)
+            var messageAsString = JSON.stringify(msg);
             console.log(prefix + " message: " + messageAsString);
             addMessage(prefix.toUpperCase() + " " + messageAsString);
         }
