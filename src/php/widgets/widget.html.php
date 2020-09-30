@@ -35,15 +35,25 @@
 
             logReceivedMessage(receivedMessage);
 
-            window.setTimeout(function() {
-                var sendingMessage = {
-                    name: "OpenFeedback",
-                    correlationId: receivedMessage.messageId
-                };
-                logSendingMessage(sendingMessage);
-                hostWindow.postMessage(sendingMessage, '*');
+            if (receivedMessage.name === 'Open') {
+                var oReq = new XMLHttpRequest();
+                oReq.addEventListener("load", function() {
+                    window.document.getElementById("object").innerHTML = this.responseText;
+                });
+                // В демо приложении отсутствует авторизация (между виджетом и бэкендом) - в реальных приложениях не делайте так (должна быть авторизация)!
+                oReq.open("GET", "<?=$getObjectUrl?>" + receivedMessage.objectId);
+                oReq.send();
 
-            }, getOpenFeedbackDelay());
+                window.setTimeout(function() {
+                    var sendingMessage = {
+                        name: "OpenFeedback",
+                        correlationId: receivedMessage.messageId
+                    };
+                    logSendingMessage(sendingMessage);
+                    hostWindow.postMessage(sendingMessage, '*');
+
+                }, getOpenFeedbackDelay());
+            }
         });
 
         function logReceivedMessage(msg) {
@@ -86,6 +96,8 @@
 </head>
 <body>
 <p><b title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API, используя contextKey">Текущий пользователь <span class="hint">(?)</span>:</b> <?=$uid?> (<?=$fio?>)</p>
+
+<p><b title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">Открыт объект <span class="hint">(?)</span>:</b> <span id="object"></span></p>
 
 <p><b title="Синтетическая задержка, позволяющая посмотреть как работает функционал OpenFeedback">Задержка OpenFeedback, мс <span class="hint">(?)</span>:</b> <input type="text" id="openFeedbackDelay" value="300"></p>
 

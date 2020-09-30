@@ -4,6 +4,10 @@ use \Firebase\JWT\JWT;
 
 require_once 'jwt.lib.php';
 
+if (!isset($dirRoot)) {
+    $dirRoot = '';
+}
+
 //
 //  Config
 //
@@ -117,6 +121,13 @@ class JsonApi {
             $this->accessToken);
     }
 
+    function getObject($entity, $objectId) {
+        return makeHttpRequest(
+            'GET',
+            cfg()->moyskladJsonApiEndpointUrl . "/entity/$entity/$objectId",
+            $this->accessToken);
+    }
+
 }
 
 function jsonApi(): JsonApi {
@@ -130,13 +141,9 @@ function jsonApi(): JsonApi {
 //  Logging
 //
 
-if (!isset($logDirRoot)) {
-    $logDirRoot = '';
-}
-
 function loginfo($name, $msg) {
-    global $logDirRoot;
-    $logDir = $logDirRoot . 'logs';
+    global $dirRoot;
+    $logDir = $dirRoot . 'logs';
     @mkdir($logDir);
     file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
 }
@@ -200,7 +207,7 @@ class AppInstance {
     }
 
     private static function buildFilename($appId, $accountId) {
-        return "data/$appId.$accountId.app";
+        return $GLOBALS['dirRoot'] . "data/$appId.$accountId.app";
     }
 
     static function loadApp($accountId): AppInstance {
@@ -208,7 +215,7 @@ class AppInstance {
     }
 
     static function load($appId, $accountId): AppInstance {
-        $data = @file_get_contents("data/$appId.$accountId.app");
+        $data = @file_get_contents(self::buildFilename($appId, $accountId));
         if ($data === false) {
             $app = new AppInstance($appId, $accountId);
         } else {
