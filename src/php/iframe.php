@@ -2,17 +2,8 @@
 
 require_once 'lib.php';
 
-$contextKey = $_GET['contextKey'];
-
-loginfo("IFRAME", "Loaded iframe with contextKey: $contextKey");
-
-$employee = vendorApi()->context($contextKey);
-
-$uid = $employee->uid;
-$fio = $employee->shortFio;
-$accountId = $employee->accountId;
-
-$isAdmin = $employee->permissions->admin->view;
+$contextName = 'IFRAME';
+require_once 'user-context-loader.inc.php';
 
 $app = AppInstance::loadApp($accountId);
 $infoMessage = $app->infoMessage;
