@@ -148,6 +148,35 @@ function loginfo($name, $msg) {
     file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
 }
 
+//Проверка токена авторизации (при запросах со стороны МоегоСклада)
+function authTokenIsValid() {
+    $secretKey = cfg()->secretKey;
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization']) || empty($headers['Authorization'] || empty($secretKey))) {
+        return false;
+    }
+
+    $token = $headers['Authorization'];
+    if (strlen($token) == 0) {
+        return false;
+    }
+
+    $bearer = "Bearer ";
+    if (substr($token, 0, 7) != $bearer) {
+        return false;
+    }
+
+    $jwtToken = str_replace($bearer, "", $token);
+
+    try {
+        JWT::decode($jwtToken, $secretKey, ["HS256"]);
+        return true;
+    } catch (Exception $exception) {
+        print_r($exception);
+        return false;
+    }
+}
+
 //
 //  AppInstance state
 //
