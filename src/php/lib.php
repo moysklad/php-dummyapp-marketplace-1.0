@@ -172,7 +172,7 @@ function authTokenIsValid() {
         JWT::decode($jwtToken, $secretKey, ["HS256"]);
         return true;
     } catch (Exception $exception) {
-        print_r($exception);
+        //ToDo - Log the exception
         return false;
     }
 }
