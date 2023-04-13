@@ -148,6 +148,41 @@ function loginfo($name, $msg) {
     file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
 }
 
+//Проверка токена авторизации (при запросах со стороны МоегоСклада)
+function authTokenIsValid() {
+    $secretKey = cfg()->secretKey;
+    $headers = apache_request_headers();
+    if (!isset($headers['Authorization']) || empty($headers['Authorization'] || empty($secretKey))) {
+        return false;
+    }
+
+    $token = $headers['Authorization'];
+    if (strlen($token) == 0) {
+        return false;
+    }
+
+    $bearer = "Bearer ";
+    if (substr($token, 0, 7) != $bearer) {
+        return false;
+    }
+
+    $jwtToken = str_replace($bearer, "", $token);
+
+    try {
+        $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
+        if (empty($decoded->jti)) {
+            return false;
+        }
+        // jti - является уникальным идентификатором токена.
+        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
+        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
+        return true;
+    } catch (Exception $exception) {
+        //ToDo - Log the exception
+        return false;
+    }
+}
+
 //
 //  AppInstance state
 //

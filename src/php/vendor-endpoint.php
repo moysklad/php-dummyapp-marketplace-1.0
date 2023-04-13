@@ -5,6 +5,12 @@ require_once 'lib.php';
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_SERVER['PATH_INFO'];
 
+//Проверка токена авторизации
+if (!authTokenIsValid()) {
+    http_response_code(401);
+    exit(0);
+}
+
 loginfo("MOYSKLAD => APP", "Received: method=$method, path=$path");
 
 $pp = explode('/', $path);
