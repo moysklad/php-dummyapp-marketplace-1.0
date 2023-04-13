@@ -170,7 +170,7 @@ function authTokenIsValid() {
 
     try {
         $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
-        if(empty($decoded['jti'])) {
+        if (empty($decoded->jti)) {
             return false;
         }
         // jti - является уникальным идентификатором токена.
