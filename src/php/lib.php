@@ -169,7 +169,13 @@ function authTokenIsValid() {
     $jwtToken = str_replace($bearer, "", $token);
 
     try {
-        JWT::decode($jwtToken, $secretKey, ["HS256"]);
+        $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
+        if(empty($decoded['jti'])) {
+            return false;
+        }
+        // jti - является уникальным идентификатором токена.
+        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
+        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
         return true;
     } catch (Exception $exception) {
         //ToDo - Log the exception
