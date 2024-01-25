@@ -20,8 +20,8 @@ class AppConfig {
 
     var $appBaseUrl = 'APP-BASE-URL';
 
-    var $moyskladVendorApiEndpointUrl = 'https://online.moysklad.ru/api/vendor/1.0';
-    var $moyskladJsonApiEndpointUrl = 'https://online.moysklad.ru/api/remap/1.2';
+    var $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
+    var $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
 
     public function __construct(array $cfg)
     {
@@ -70,14 +70,14 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $body
         ? array('http' =>
             array(
                 'method'  => $method,
-                'header'  => array('Authorization: Bearer ' . $bearerToken, "Content-type: application/json"),
+                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip", "Content-type: application/json"),
                 'content' => $body
             )
         )
         : array('http' =>
             array(
                 'method'  => $method,
-                'header'  => 'Authorization: Bearer ' . $bearerToken
+                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip")
             )
         );
     $context = stream_context_create($opts);
@@ -100,7 +100,6 @@ function buildJWT() {
     );
     return JWT::encode($token, cfg()->secretKey);
 }
-
 
 //
 //  JSON API 1.2
