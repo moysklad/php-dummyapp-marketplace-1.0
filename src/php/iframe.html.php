@@ -13,19 +13,16 @@
             font-size: 24px;
             padding-bottom: 200px;
         }
-
         input {
             font-size: 24px;
         }
         select {
             font-size: 24px;
         }
-
         .info-box {
             display: inline-block;
             padding: 25px;
         }
-
         .settings-required {
             border: red dashed 1px;
             background-color: lightsalmon;
@@ -33,7 +30,6 @@
         .settings-required::before {
             content: "ТРЕБУЕТСЯ НАСТРОЙКА";
         }
-
         .ready-for-work {
             border: green dashed 1px;
             background-color: lightgreen;
@@ -92,8 +88,6 @@ if ($isAdmin) {
 <?php
 }
 ?>
-
-
 
 </body>
 </html>

@@ -16,7 +16,7 @@
 
 Приложение встраивает виджеты на следующие экраны:
 
-* Контрагент (entity.counterparty.view)
+* Контрагент (entity.counterparty.edit)
 * Заказ покупателя (document.customerorder.edit)
 * Отгрузка (document.demand.edit)
 
@@ -62,7 +62,7 @@
 
 ### Файлы виджетов
 
-* `widgets/counterparty-widget.php`     - контроллер виджета в карточке Контрагента (entity.counterparty.view)
+* `widgets/counterparty-widget.php`     - контроллер виджета в карточке Контрагента (entity.counterparty.edit)
 * `widgets/customerorder-widget.php`    - контроллер виджета в Заказе покупателя (document.customerorder.edit)
 * `widgets/demand-widget.php`           - контроллер виджета в Отгрузке (document.demand.edit)
 * `widgets/widget.html.php`             - HTML-шаблон содержимого виджета с javascript-кодом взаимодействия виджета с хост-окном

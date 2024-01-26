@@ -1,6 +1,6 @@
-<ServerApplication xmlns="https://online.moysklad.ru/xml/ns/appstore/app/v2"
-             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-             xsi:schemaLocation="https://online.moysklad.ru/xml/ns/appstore/app/v2 https://online.moysklad.ru/xml/ns/appstore/app/v2/application-v2.xsd">
+<ServerApplication xmlns="https://apps-api.moysklad.ru/xml/ns/appstore/app/v2"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="https://apps-api.moysklad.ru/xml/ns/appstore/app/v2 https://apps-api.moysklad.ru/xml/ns/appstore/app/v2/application-v2.xsd">
     <iframe>
         <sourceUrl><?=cfg()->appBaseUrl?>/iframe.php</sourceUrl>
     </iframe>
@@ -12,7 +12,7 @@
         <scope>admin</scope>
     </access>
     <widgets>
-        <entity.counterparty.view>
+        <entity.counterparty.edit>
             <sourceUrl><?=cfg()->appBaseUrl?>/widgets/counterparty-widget.php</sourceUrl>
             <height>
                 <fixed>250px</fixed>
@@ -20,7 +20,7 @@
             <supports>
                 <open-feedback/>
             </supports>
-        </entity.counterparty.view>
+        </entity.counterparty.edit>
         <document.customerorder.edit>
             <sourceUrl><?=cfg()->appBaseUrl?>/widgets/customerorder-widget.php</sourceUrl>
             <height>
