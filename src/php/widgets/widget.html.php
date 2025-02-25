@@ -40,7 +40,7 @@
                 oReq.addEventListener("load", function() {
                     window.document.getElementById("object").innerHTML = this.responseText;
                 });
-                // В демо приложении отсутствует авторизация (между виджетом и бэкендом) - в реальных приложениях не делайте так (должна быть авторизация)!
+                // В демо отсутствует авторизация (между виджетом и бэкендом) - в реальных решениях не делайте так (должна быть авторизация)!
                 oReq.open("GET", "<?=$getObjectUrl?>" + receivedMessage.objectId);
                 oReq.send();
 
@@ -101,7 +101,7 @@
 
 <p><b title="Синтетическая задержка, позволяющая посмотреть как работает функционал OpenFeedback">Задержка OpenFeedback, мс <span class="hint">(?)</span>:</b> <input type="text" id="openFeedbackDelay" value="300"></p>
 
-<p><b title="Здесь можно посмотреть границы и размеры содержимого виджета. Ширина одинаковая у всех виджетов, высота на текущий момент задается статически для виджета в дескрипторе приложения">Cодержимое <span class="hint">(?)</span></b>:
+<p><b title="Здесь можно посмотреть границы и размеры содержимого виджета. Ширина одинаковая у всех виджетов, высота на текущий момент задается статически для виджета в дескрипторе решения">Содержимое <span class="hint">(?)</span></b>:
     границы <input type="checkbox" onclick="toggleBorders(this.checked)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ширина x высота, px: <span id="dimensions"><button onclick="showDimensions()">показать</button></span>
     <span class="hint" title="Обратите внимание, что геометрические свойства DOM-элементов типа scrollHeight равны 0 или null до момента снятия заглушки в хост-окне (например, в обработчике входящих postMessage-сообщений и даже после отправки сообщения OpenFeedback)">(?)</span></p>
 
