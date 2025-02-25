@@ -35,7 +35,7 @@
             background-color: lightgreen;
         }
         .ready-for-work::before {
-            content: "ПРИЛОЖЕНИЕ ГОТОВО К РАБОТЕ";
+            content: "РЕШЕНИЕ ГОТОВО К РАБОТЕ";
         }
     </style>
 </head>
@@ -49,7 +49,7 @@
     <li>Уровень доступа: <b><?= $isAdmin ? 'администратор аккаунта' : 'простой пользователь'?></b></li>
 </ul>
 
-<h2>Состояние приложения</h2>
+<h2>Состояние решения</h2>
 
 <div class="info-box <?=$isSettingsRequired ? 'settings-required' : 'ready-for-work'?>">
     <?php
