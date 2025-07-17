@@ -82,6 +82,8 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $body
         );
     $context = stream_context_create($opts);
     $result = file_get_contents($url, false, $context);
+    logdebug("MOYSKLAD => APP", "Response: $method $url\n$result");
+
     return json_decode($result);
 }
 
@@ -147,14 +149,20 @@ function loginfo($name, $msg) {
     file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
 }
 
+function logdebug($name, $msg) {
+    global $dirRoot;
+    $logDir = $dirRoot . 'logs';
+    @mkdir($logDir);
+    file_put_contents($logDir . '/debug.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
+}
+
 //Проверка токена авторизации (при запросах со стороны МоегоСклада)
 function authTokenIsValid() {
     $secretKey = cfg()->secretKey;
     $headers = apache_request_headers();
-    if (!isset($headers['Authorization']) || empty($headers['Authorization'] || empty($secretKey))) {
+    if (!isset($headers['Authorization']) || empty($headers['Authorization'])) {
         return false;
     }
-
     $token = $headers['Authorization'];
     if (strlen($token) == 0) {
         return false;
