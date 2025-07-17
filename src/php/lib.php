@@ -60,7 +60,6 @@ class VendorApi {
             buildJWT(),
             $body);
     }
-
 }
 
 function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null) {
@@ -158,22 +157,23 @@ function logdebug($name, $msg) {
 
 //Проверка токена авторизации (при запросах со стороны МоегоСклада)
 function authTokenIsValid() {
-    $secretKey = cfg()->secretKey;
     $headers = apache_request_headers();
     if (!isset($headers['Authorization']) || empty($headers['Authorization'])) {
         return false;
     }
     $token = $headers['Authorization'];
-    if (strlen($token) == 0) {
-        return false;
-    }
 
     $bearer = "Bearer ";
     if (substr($token, 0, 7) != $bearer) {
         return false;
     }
-
     $jwtToken = str_replace($bearer, "", $token);
+
+    $secretKey = cfg()->secretKey;
+    if (empty($secretKey)) {
+        loginfo("Error", "Secret key is not set in config");
+        return false;
+    }
 
     try {
         $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);

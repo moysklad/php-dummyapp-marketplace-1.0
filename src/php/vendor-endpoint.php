@@ -1,6 +1,7 @@
 <?php
 
 require_once 'lib.php';
+require_once 'button.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 $path = $_SERVER['PATH_INFO'];
@@ -13,10 +14,11 @@ if (!authTokenIsValid()) {
 
 loginfo("MOYSKLAD => APP", "Received: method=$method, path=$path");
 
+$path = str_ireplace('/api/moysklad/vendor/1.0/apps/', '', $path);
 $pp = explode('/', $path);
 $n = count($pp);
-$appId = $pp[$n - 2];
-$accountId = $pp[$n - 1];
+$appId = $pp[0];
+$accountId = $pp[1];
 
 loginfo("MOYSKLAD => APP", "Extracted: appId=$appId, accountId=$accountId");
 
@@ -42,6 +44,19 @@ switch ($method) {
             $app->persist();
         }
         break;
+    case 'POST':
+        if ($pp[2] == 'button') {
+            $requestBody = file_get_contents('php://input');
+            loginfo("MOYSKLAD => APP", "Request body: " . print_r($requestBody, true));
+            $data = json_decode($requestBody);
+
+            if (!empty($data->objectId)) {
+                echo json_encode(processDocumentButtonClick($data->buttonName, $data->extensionPoint, $data->objectId, $data->user));
+            } elseif (!empty($data->selected)) {
+                echo json_encode(processListButtonClick($data->buttonName, $data->extensionPoint, $data->selected, $data->user));
+            }
+        }
+        break;
     case 'GET':
         break;
     case 'DELETE':
@@ -50,6 +65,7 @@ switch ($method) {
         break;
 }
 
+// TODO
 if (!$app->getStatusName()) {
     http_response_code(404);
 } else if ($replyStatus) {
