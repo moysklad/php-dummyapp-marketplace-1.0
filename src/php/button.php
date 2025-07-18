@@ -18,7 +18,16 @@ function processDocumentButtonClick(string $buttonName, string $extensionPoint, 
                 'url' => 'https://api.whatsapp.com/send/?phone=%2B79127775533'
             ]
         ];
+    } elseif ($buttonName == 'show-popup') {
+        return [
+            'action' => 'showPopup',
+            'params' => [
+                'popupName' => 'some-popup',
+                'popupParameters' => ['paramStr' => 'Hello', 'paramInt' => 777]
+            ]
+        ];
     }
+    return [];
 }
 
 function processListButtonClick(string $buttonName, string $extensionPoint, $objects, $user)
@@ -36,4 +45,5 @@ function processListButtonClick(string $buttonName, string $extensionPoint, $obj
             ]
         ];
     }
+    return [];
 }

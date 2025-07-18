@@ -40,6 +40,12 @@
             </supports>
         </document.demand.edit>
     </widgets>
+    <popups>
+        <popup>
+            <name>some-popup</name>
+            <sourceUrl><?=cfg()->appBaseUrl?>/widgets/popup.php</sourceUrl>
+        </popup>
+    </popups>
     <buttons>
         <button name="show-notification" title="Отобразить уведомление">
             <locations>
@@ -48,6 +54,11 @@
             </locations>
         </button>
         <button name="navigate-to" title="Открыть ссылку">
+            <locations>
+                <document.customerorder.edit/>
+            </locations>
+        </button>
+        <button name="show-popup" title="Открыть popup">
             <locations>
                 <document.customerorder.edit/>
             </locations>
