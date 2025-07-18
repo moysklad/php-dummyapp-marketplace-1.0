@@ -56,6 +56,18 @@
             }
         });
 
+        let messageId = 1;
+        function sendOpenPopupMsg() {
+            let msg = {
+                name: "ShowPopupRequest",
+                messageId: messageId++,
+                popupName: "some-popup",
+                popupParameters: "Hello, popup"
+            }
+            logSendingMessage(msg);
+            parent.postMessage(msg, '*');
+        }
+
         function logReceivedMessage(msg) {
             logMessage("→ Received", msg)
         }
@@ -99,7 +111,10 @@
 
 <p><b title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">Открыт объект <span class="hint">(?)</span>:</b> <span id="object"></span></p>
 
-<p><b title="Синтетическая задержка, позволяющая посмотреть как работает функционал OpenFeedback">Задержка OpenFeedback, мс <span class="hint">(?)</span>:</b> <input type="text" id="openFeedbackDelay" value="300"></p>
+<p>
+    <b title="Синтетическая задержка, позволяющая посмотреть как работает функционал OpenFeedback">Задержка OpenFeedback, мс <span class="hint">(?)</span>:</b> <input type="text" id="openFeedbackDelay" value="300" size="3">
+    &nbsp;<button onclick="sendOpenPopupMsg()" title="Отправить сообщение для открытия кастомного модального окна">Открыть popup</button>
+</p>
 
 <p><b title="Здесь можно посмотреть границы и размеры содержимого виджета. Ширина одинаковая у всех виджетов, высота на текущий момент задается статически для виджета в дескрипторе решения">Содержимое <span class="hint">(?)</span></b>:
     границы <input type="checkbox" onclick="toggleBorders(this.checked)">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ширина x высота, px: <span id="dimensions"><button onclick="showDimensions()">показать</button></span>
