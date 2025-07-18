@@ -20,7 +20,7 @@ $n = count($pp);
 $appId = $pp[0];
 $accountId = $pp[1];
 
-loginfo("MOYSKLAD => APP", "Extracted: appId=$appId, accountId=$accountId");
+logdebug("MOYSKLAD => APP", "Extracted: appId=$appId, accountId=$accountId");
 
 $app = AppInstance::load($appId, $accountId);
 $replyStatus = true;
@@ -45,17 +45,20 @@ switch ($method) {
         }
         break;
     case 'POST':
+        // Обработка нажатий на кастомные кнопки
         if ($pp[2] == 'button') {
             $requestBody = file_get_contents('php://input');
             loginfo("MOYSKLAD => APP", "Request body: " . print_r($requestBody, true));
             $data = json_decode($requestBody);
 
+            header("Content-Type: application/json");
             if (!empty($data->objectId)) {
                 echo json_encode(processDocumentButtonClick($data->buttonName, $data->extensionPoint, $data->objectId, $data->user));
             } elseif (!empty($data->selected)) {
                 echo json_encode(processListButtonClick($data->buttonName, $data->extensionPoint, $data->selected, $data->user));
             }
         }
+        $replyStatus = false;
         break;
     case 'GET':
         break;
@@ -65,7 +68,6 @@ switch ($method) {
         break;
 }
 
-// TODO
 if (!$app->getStatusName()) {
     http_response_code(404);
 } else if ($replyStatus) {

@@ -4,8 +4,7 @@
     <meta charset="utf-8">
 
     <title>DummyApp: <?=$contextName?></title>
-    <meta name="description" content="DummyApp widget for Marketplace of MoySklad">
-    <meta name="author" content="onekludov@moysklad.ru">
+    <meta name="description" content="DummyApp Widget for Apps Catalog of MoySklad">
 
     <style>
         html {
