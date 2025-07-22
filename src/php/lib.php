@@ -131,7 +131,7 @@ class JsonApi {
 }
 
 function jsonApi(): JsonApi {
-    if (!$GLOBALS['jsonApi']) {
+    if (empty($GLOBALS['jsonApi'])) {
         $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
     }
     return $GLOBALS['jsonApi'];

@@ -1,7 +1,7 @@
 <?php
 
 $contextKey = $_GET['contextKey'];
-loginfo($contextName ?: "IFRAME", "Loaded iframe with contextKey: $contextKey");
+loginfo($contextName ?? "IFRAME", "Loaded iframe with contextKey: $contextKey");
 $employee = vendorApi()->context($contextKey);
 
 $uid = $employee->uid;
