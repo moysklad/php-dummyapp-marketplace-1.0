@@ -63,7 +63,7 @@ class VendorApi {
 }
 
 function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null) {
-    loginfo("APP => MOYSKLAD", "Send: $method $url\n$body");
+    log_message('DEBUG', "Send: $method $url\n$body");
 
     $opts = $body
         ? array('http' =>
@@ -81,7 +81,7 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $body
         );
     $context = stream_context_create($opts);
     $result = file_get_contents($url, false, $context);
-    logdebug("MOYSKLAD => APP", "Response: $method $url\n$result");
+    log_message('DEBUG', "Response: $method $url\n$result");
 
     return json_decode($result);
 }
@@ -141,52 +141,32 @@ function jsonApi(): JsonApi {
 //  Logging
 //
 
-function loginfo($name, $msg) {
-    global $dirRoot;
-    $logDir = $dirRoot . 'logs';
-    @mkdir($logDir);
-    file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
-}
+define('LOG_LEVEL', 'DEBUG');
 
-function logdebug($name, $msg) {
-    global $dirRoot;
-    $logDir = $dirRoot . 'logs';
-    @mkdir($logDir);
-    file_put_contents($logDir . '/debug.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
-}
+const LOG_LEVELS = [
+    'DEBUG' => 1,
+    'INFO'  => 2,
+    'WARN'  => 3,
+    'ERROR' => 4
+];
 
-//Проверка токена авторизации (при запросах со стороны МоегоСклада)
-function authTokenIsValid() {
-    $headers = apache_request_headers();
-    if (!isset($headers['Authorization']) || empty($headers['Authorization'])) {
-        return false;
-    }
-    $token = $headers['Authorization'];
+function log_message($level, $message) {
+    if (LOG_LEVELS[$level] >= LOG_LEVELS[LOG_LEVEL]) {
+        $log_entry = sprintf(
+            "[%s][%s] %s\n",
+            date('Y-m-d H:i:s'),
+            $level,
+            $message
+        );
 
-    $bearer = "Bearer ";
-    if (substr($token, 0, 7) != $bearer) {
-        return false;
-    }
-    $jwtToken = str_replace($bearer, "", $token);
+        // Пишем в stderr для Docker
+        file_put_contents('php://stderr', $log_entry, FILE_APPEND);
 
-    $secretKey = cfg()->secretKey;
-    if (empty($secretKey)) {
-        loginfo("Error", "Secret key is not set in config");
-        return false;
-    }
-
-    try {
-        $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
-        if (empty($decoded->jti)) {
-            return false;
-        }
-        // jti - является уникальным идентификатором токена.
-        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
-        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
-        return true;
-    } catch (Exception $exception) {
-        //ToDo - Log the exception
-        return false;
+        // Дополнительно в файл
+        global $dirRoot;
+        $logDir = $dirRoot . 'logs';
+        @mkdir($logDir);
+        file_put_contents($logDir . '/log.txt', $log_entry, FILE_APPEND);
     }
 }
 
