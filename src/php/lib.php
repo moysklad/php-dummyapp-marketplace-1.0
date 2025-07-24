@@ -12,13 +12,12 @@ if (!isset($dirRoot)) {
 //  Config
 //
 
-class AppConfig {
-
-    var $appId = 'APP-ID';
-    var $appUid = 'APP-UID';
-    var $secretKey = 'SECRET-KEY';
-
-    var $appBaseUrl = 'APP-BASE-URL';
+class AppConfig
+{
+    var $appId = '';
+    var $appUid = '';
+    var $secretKey = '';
+    var $appBaseUrl = '';
 
     var $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
     var $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
@@ -33,7 +32,8 @@ class AppConfig {
 
 $cfg = new AppConfig(require('config.php'));
 
-function cfg(): AppConfig {
+function cfg(): AppConfig
+{
     return $GLOBALS['cfg'];
 }
 
@@ -41,19 +41,23 @@ function cfg(): AppConfig {
 //  Vendor API 1.0
 //
 
-class VendorApi {
+class VendorApi
+{
 
-    function context(string $contextKey) {
+    function context(string $contextKey)
+    {
         return $this->request('POST', '/context/' . $contextKey);
     }
 
-    function updateAppStatus(string $appId, string $accountId, string $status) {
+    function updateAppStatus(string $appId, string $accountId, string $status)
+    {
         return $this->request('PUT',
             "/apps/$appId/$accountId/status",
             "{\"status\": \"$status\"}");
     }
 
-    private function request(string $method, $path, $body = null) {
+    private function request(string $method, $path, $body = null)
+    {
         return makeHttpRequest(
             $method,
             cfg()->moyskladVendorApiEndpointUrl . $path,
@@ -62,21 +66,22 @@ class VendorApi {
     }
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null) {
+function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null)
+{
     log_message('DEBUG', "Send: $method $url\n$body");
 
     $opts = $body
         ? array('http' =>
             array(
-                'method'  => $method,
-                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip", "Content-type: application/json"),
+                'method' => $method,
+                'header' => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip", "Content-type: application/json"),
                 'content' => $body
             )
         )
         : array('http' =>
             array(
-                'method'  => $method,
-                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip")
+                'method' => $method,
+                'header' => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip")
             )
         );
     $context = stream_context_create($opts);
@@ -88,11 +93,13 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $body
 
 $vendorApi = new VendorApi();
 
-function vendorApi(): VendorApi {
+function vendorApi(): VendorApi
+{
     return $GLOBALS['vendorApi'];
 }
 
-function buildJWT() {
+function buildJWT()
+{
     $token = array(
         "sub" => cfg()->appUid,
         "iat" => time(),
@@ -106,22 +113,26 @@ function buildJWT() {
 //  JSON API 1.2
 //
 
-class JsonApi {
+class JsonApi
+{
 
     private $accessToken;
 
-    function __construct(string $accessToken) {
+    function __construct(string $accessToken)
+    {
         $this->accessToken = $accessToken;
     }
 
-    function stores() {
+    function stores()
+    {
         return makeHttpRequest(
             'GET',
             cfg()->moyskladJsonApiEndpointUrl . '/entity/store',
             $this->accessToken);
     }
 
-    function getObject($entity, $objectId) {
+    function getObject($entity, $objectId)
+    {
         return makeHttpRequest(
             'GET',
             cfg()->moyskladJsonApiEndpointUrl . "/entity/$entity/$objectId",
@@ -130,7 +141,8 @@ class JsonApi {
 
 }
 
-function jsonApi(): JsonApi {
+function jsonApi(): JsonApi
+{
     if (empty($GLOBALS['jsonApi'])) {
         $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
     }
@@ -141,16 +153,15 @@ function jsonApi(): JsonApi {
 //  Logging
 //
 
-define('LOG_LEVEL', 'DEBUG');
-
 const LOG_LEVELS = [
     'DEBUG' => 1,
-    'INFO'  => 2,
-    'WARN'  => 3,
+    'INFO' => 2,
+    'WARN' => 3,
     'ERROR' => 4
 ];
 
-function log_message($level, $message) {
+function log_message($level, $message)
+{
     if (LOG_LEVELS[$level] >= LOG_LEVELS[LOG_LEVEL]) {
         $log_entry = sprintf(
             "[%s][%s] %s\n",
@@ -176,7 +187,8 @@ function log_message($level, $message) {
 
 $currentAppInstance = null;
 
-class AppInstance {
+class AppInstance
+{
 
     const UNKNOWN = 0;
     const SETTINGS_REQUIRED = 1;
@@ -191,7 +203,8 @@ class AppInstance {
 
     var $status = AppInstance::UNKNOWN;
 
-    static function get(): AppInstance {
+    static function get(): AppInstance
+    {
         $app = $GLOBALS['currentAppInstance'];
         if (!$app) {
             throw new InvalidArgumentException("There is no current app instance context");
@@ -205,7 +218,8 @@ class AppInstance {
         $this->accountId = $accountId;
     }
 
-    function getStatusName() {
+    function getStatusName()
+    {
         switch ($this->status) {
             case self::SETTINGS_REQUIRED:
                 return 'SettingsRequired';
@@ -215,28 +229,34 @@ class AppInstance {
         return null;
     }
 
-    function persist() {
+    function persist()
+    {
         @mkdir('data');
         file_put_contents($this->filename(), serialize($this));
     }
 
-    function delete() {
+    function delete()
+    {
         @unlink($this->filename());
     }
 
-    private function filename() {
+    private function filename()
+    {
         return self::buildFilename($this->appId, $this->accountId);
     }
 
-    private static function buildFilename($appId, $accountId) {
+    private static function buildFilename($appId, $accountId)
+    {
         return $GLOBALS['dirRoot'] . "data/$appId.$accountId.app";
     }
 
-    static function loadApp($accountId): AppInstance {
+    static function loadApp($accountId): AppInstance
+    {
         return self::load(cfg()->appId, $accountId);
     }
 
-    static function load($appId, $accountId): AppInstance {
+    static function load($appId, $accountId): AppInstance
+    {
         $data = @file_get_contents(self::buildFilename($appId, $accountId));
         if ($data === false) {
             $app = new AppInstance($appId, $accountId);

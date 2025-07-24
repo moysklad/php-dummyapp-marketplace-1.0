@@ -89,18 +89,18 @@ function replyStatus($appId, $accountId, $status)
 
 function authTokenIsValid($headers): bool
 {
-    if (!isset($headers['Authorization']) || empty($headers['Authorization'])) {
+    $auth = $headers['Authorization'] ?? $headers['authorization'] ?? null;
+    if (empty($auth)) {
         log_message('WARN', "Authorization header not set");
         return false;
     }
-    $token = $headers['Authorization'];
 
     $bearer = "Bearer ";
-    if (substr($token, 0, 7) != $bearer) {
-        log_message('WARN', "Invalid auth token: $token");
+    if (substr($auth, 0, 7) != $bearer) {
+        log_message('WARN', "Invalid auth token: $auth");
         return false;
     }
-    $jwtToken = str_replace($bearer, "", $token);
+    $jwtToken = str_replace($bearer, "", $auth);
 
     $secretKey = cfg()->secretKey;
     if (empty($secretKey)) {
