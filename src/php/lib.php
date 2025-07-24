@@ -66,29 +66,48 @@ class VendorApi
     }
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null)
-{
-    log_message('DEBUG', "Send: $method $url\n$body");
+function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null) {
+    $curl = curl_init($url);
 
-    $opts = $body
-        ? array('http' =>
-            array(
-                'method' => $method,
-                'header' => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip", "Content-type: application/json"),
-                'content' => $body
-            )
-        )
-        : array('http' =>
-            array(
-                'method' => $method,
-                'header' => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip")
-            )
-        );
-    $context = stream_context_create($opts);
-    $result = file_get_contents($url, false, $context);
-    log_message('DEBUG', "Response: $method $url\n$result");
+    $headers = array('Authorization: Bearer ' . $bearerToken, 'Accept-Encoding: gzip');
+    if ($data) {
+        $headers[] = 'Content-type: application/json';
+    }
+    log_message('DEBUG', "Request: $method $url" .print_r($headers, true) . print_r($data, true));
 
-    return json_decode($result);
+    $options = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HEADER => true
+    ];
+
+    if ($method !== 'GET' && $data !== null) {
+        $options[CURLOPT_POSTFIELDS] = is_array($data)
+            ? http_build_query($data)
+            : $data;
+    }
+
+    curl_setopt_array($curl, $options);
+
+    $response = curl_exec($curl);
+    $error = curl_error($curl);
+    $info = curl_getinfo($curl);
+    curl_close($curl);
+
+    if ($error) {
+        log_message('ERROR', "Response error: $error");
+        return null;
+    } else {
+        $headerSize = $info['header_size'];
+        $body = substr($response, $headerSize);
+        log_message('DEBUG', "Response: $method $url\n$response");
+        return json_decode($body);
+    }
 }
 
 $vendorApi = new VendorApi();

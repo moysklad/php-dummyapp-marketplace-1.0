@@ -6,10 +6,11 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
+    libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем расширения PHP
-RUN docker-php-ext-install zip opcache
+RUN docker-php-ext-install zip opcache curl
 
 # Включаем модуль Apache rewrite
 #RUN a2enmod rewrite
