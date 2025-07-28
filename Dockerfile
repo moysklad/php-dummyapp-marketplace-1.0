@@ -25,9 +25,9 @@ RUN chown -R www-data:www-data /var/www/html \
 
 # Настраиваем document root
 ENV APACHE_DOCUMENT_ROOT=/var/www/html/src/php
-RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
-RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
-RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf \
+    && sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf \
+    && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Установка конфигурационных параметров решения: замените на свои значения
 # и не забудьте указать SECRET_KEY при запуске (но не храните его в системе контроля версий)
