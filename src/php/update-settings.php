@@ -5,7 +5,7 @@ require_once 'lib.php';
 $infoMessage = $_POST['infoMessage'];
 $store = $_POST['store'];
 
-loginfo('UPDATE-SETTINGS', "Update info message: $infoMessage, store: $store");
+log_message('INFO', "Update settings: $infoMessage, store: $store");
 
 $accountId = $_POST['accountId'];
 

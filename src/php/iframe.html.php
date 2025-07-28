@@ -4,8 +4,7 @@
     <meta charset="utf-8">
 
     <title>DummyApp</title>
-    <meta name="description" content="DummyApp for Marketplace of MoySklad">
-    <meta name="author" content="onekludov@moysklad.ru">
+    <meta name="description" content="DummyApp for Apps Catalog of MoySklad">
 
     <style>
         body {

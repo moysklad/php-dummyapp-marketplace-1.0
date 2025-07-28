@@ -12,13 +12,12 @@ if (!isset($dirRoot)) {
 //  Config
 //
 
-class AppConfig {
-
-    var $appId = 'APP-ID';
-    var $appUid = 'APP-UID';
-    var $secretKey = 'SECRET-KEY';
-
-    var $appBaseUrl = 'APP-BASE-URL';
+class AppConfig
+{
+    var $appId = '';
+    var $appUid = '';
+    var $secretKey = '';
+    var $appBaseUrl = '';
 
     var $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
     var $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
@@ -33,7 +32,8 @@ class AppConfig {
 
 $cfg = new AppConfig(require('config.php'));
 
-function cfg(): AppConfig {
+function cfg(): AppConfig
+{
     return $GLOBALS['cfg'];
 }
 
@@ -41,57 +41,84 @@ function cfg(): AppConfig {
 //  Vendor API 1.0
 //
 
-class VendorApi {
+class VendorApi
+{
 
-    function context(string $contextKey) {
+    function context(string $contextKey)
+    {
         return $this->request('POST', '/context/' . $contextKey);
     }
 
-    function updateAppStatus(string $appId, string $accountId, string $status) {
+    function updateAppStatus(string $appId, string $accountId, string $status)
+    {
         return $this->request('PUT',
             "/apps/$appId/$accountId/status",
             "{\"status\": \"$status\"}");
     }
 
-    private function request(string $method, $path, $body = null) {
+    private function request(string $method, $path, $body = null)
+    {
         return makeHttpRequest(
             $method,
             cfg()->moyskladVendorApiEndpointUrl . $path,
             buildJWT(),
             $body);
     }
-
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $body = null) {
-    loginfo("APP => MOYSKLAD", "Send: $method $url\n$body");
+function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null) {
+    $curl = curl_init($url);
 
-    $opts = $body
-        ? array('http' =>
-            array(
-                'method'  => $method,
-                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip", "Content-type: application/json"),
-                'content' => $body
-            )
-        )
-        : array('http' =>
-            array(
-                'method'  => $method,
-                'header'  => array('Authorization: Bearer ' . $bearerToken, "Accept-Encoding: gzip")
-            )
-        );
-    $context = stream_context_create($opts);
-    $result = file_get_contents($url, false, $context);
-    return json_decode($result);
+    $headers = array('Authorization: Bearer ' . $bearerToken, 'Accept-Encoding: gzip');
+    if ($data) {
+        $headers[] = 'Content-type: application/json';
+    }
+    log_message('DEBUG', "Request: $method $url" .print_r($headers, true) . print_r($data, true));
+
+    $options = [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 10,
+        CURLOPT_TIMEOUT => 30,
+        CURLOPT_HTTPHEADER => $headers,
+        CURLOPT_CUSTOMREQUEST => $method,
+        CURLOPT_ENCODING => '',
+        CURLOPT_HEADER => true
+    ];
+
+    if ($method !== 'GET' && $data !== null) {
+        $options[CURLOPT_POSTFIELDS] = is_array($data)
+            ? http_build_query($data)
+            : $data;
+    }
+
+    curl_setopt_array($curl, $options);
+
+    $response = curl_exec($curl);
+    $error = curl_error($curl);
+    $info = curl_getinfo($curl);
+    curl_close($curl);
+
+    if ($error) {
+        log_message('ERROR', "Response error: $error");
+        return null;
+    } else {
+        $headerSize = $info['header_size'];
+        $body = substr($response, $headerSize);
+        log_message('DEBUG', "Response: $method $url\n$response");
+        return json_decode($body);
+    }
 }
 
 $vendorApi = new VendorApi();
 
-function vendorApi(): VendorApi {
+function vendorApi(): VendorApi
+{
     return $GLOBALS['vendorApi'];
 }
 
-function buildJWT() {
+function buildJWT()
+{
     $token = array(
         "sub" => cfg()->appUid,
         "iat" => time(),
@@ -105,22 +132,26 @@ function buildJWT() {
 //  JSON API 1.2
 //
 
-class JsonApi {
+class JsonApi
+{
 
     private $accessToken;
 
-    function __construct(string $accessToken) {
+    function __construct(string $accessToken)
+    {
         $this->accessToken = $accessToken;
     }
 
-    function stores() {
+    function stores()
+    {
         return makeHttpRequest(
             'GET',
             cfg()->moyskladJsonApiEndpointUrl . '/entity/store',
             $this->accessToken);
     }
 
-    function getObject($entity, $objectId) {
+    function getObject($entity, $objectId)
+    {
         return makeHttpRequest(
             'GET',
             cfg()->moyskladJsonApiEndpointUrl . "/entity/$entity/$objectId",
@@ -129,8 +160,9 @@ class JsonApi {
 
 }
 
-function jsonApi(): JsonApi {
-    if (!$GLOBALS['jsonApi']) {
+function jsonApi(): JsonApi
+{
+    if (empty($GLOBALS['jsonApi'])) {
         $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
     }
     return $GLOBALS['jsonApi'];
@@ -140,45 +172,31 @@ function jsonApi(): JsonApi {
 //  Logging
 //
 
-function loginfo($name, $msg) {
-    global $dirRoot;
-    $logDir = $dirRoot . 'logs';
-    @mkdir($logDir);
-    file_put_contents($logDir . '/log.txt', date(DATE_W3C) . ' [' . $name . '] '. $msg . "\n", FILE_APPEND);
-}
+const LOG_LEVELS = [
+    'DEBUG' => 1,
+    'INFO' => 2,
+    'WARN' => 3,
+    'ERROR' => 4
+];
 
-//Проверка токена авторизации (при запросах со стороны МоегоСклада)
-function authTokenIsValid() {
-    $secretKey = cfg()->secretKey;
-    $headers = apache_request_headers();
-    if (!isset($headers['Authorization']) || empty($headers['Authorization'] || empty($secretKey))) {
-        return false;
-    }
+function log_message($level, $message)
+{
+    if (LOG_LEVELS[$level] >= LOG_LEVELS[LOG_LEVEL]) {
+        $log_entry = sprintf(
+            "[%s][%s] %s\n",
+            date('Y-m-d H:i:s'),
+            $level,
+            $message
+        );
 
-    $token = $headers['Authorization'];
-    if (strlen($token) == 0) {
-        return false;
-    }
+        // Пишем в stderr для Docker
+        file_put_contents('php://stderr', $log_entry, FILE_APPEND);
 
-    $bearer = "Bearer ";
-    if (substr($token, 0, 7) != $bearer) {
-        return false;
-    }
-
-    $jwtToken = str_replace($bearer, "", $token);
-
-    try {
-        $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
-        if (empty($decoded->jti)) {
-            return false;
-        }
-        // jti - является уникальным идентификатором токена.
-        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
-        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
-        return true;
-    } catch (Exception $exception) {
-        //ToDo - Log the exception
-        return false;
+        // Дополнительно в файл
+        global $dirRoot;
+        $logDir = $dirRoot . 'logs';
+        @mkdir($logDir);
+        file_put_contents($logDir . '/log.txt', $log_entry, FILE_APPEND);
     }
 }
 
@@ -188,7 +206,8 @@ function authTokenIsValid() {
 
 $currentAppInstance = null;
 
-class AppInstance {
+class AppInstance
+{
 
     const UNKNOWN = 0;
     const SETTINGS_REQUIRED = 1;
@@ -203,7 +222,8 @@ class AppInstance {
 
     var $status = AppInstance::UNKNOWN;
 
-    static function get(): AppInstance {
+    static function get(): AppInstance
+    {
         $app = $GLOBALS['currentAppInstance'];
         if (!$app) {
             throw new InvalidArgumentException("There is no current app instance context");
@@ -217,7 +237,8 @@ class AppInstance {
         $this->accountId = $accountId;
     }
 
-    function getStatusName() {
+    function getStatusName()
+    {
         switch ($this->status) {
             case self::SETTINGS_REQUIRED:
                 return 'SettingsRequired';
@@ -227,28 +248,34 @@ class AppInstance {
         return null;
     }
 
-    function persist() {
+    function persist()
+    {
         @mkdir('data');
         file_put_contents($this->filename(), serialize($this));
     }
 
-    function delete() {
+    function delete()
+    {
         @unlink($this->filename());
     }
 
-    private function filename() {
+    private function filename()
+    {
         return self::buildFilename($this->appId, $this->accountId);
     }
 
-    private static function buildFilename($appId, $accountId) {
+    private static function buildFilename($appId, $accountId)
+    {
         return $GLOBALS['dirRoot'] . "data/$appId.$accountId.app";
     }
 
-    static function loadApp($accountId): AppInstance {
+    static function loadApp($accountId): AppInstance
+    {
         return self::load(cfg()->appId, $accountId);
     }
 
-    static function load($appId, $accountId): AppInstance {
+    static function load($appId, $accountId): AppInstance
+    {
         $data = @file_get_contents(self::buildFilename($appId, $accountId));
         if ($data === false) {
             $app = new AppInstance($appId, $accountId);
