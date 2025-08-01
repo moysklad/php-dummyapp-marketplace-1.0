@@ -191,12 +191,6 @@ function log_message($level, $message)
 
         // Пишем в stderr для Docker
         file_put_contents('php://stderr', $log_entry, FILE_APPEND);
-
-        // Дополнительно в файл
-        global $dirRoot;
-        $logDir = $dirRoot . 'logs';
-        @mkdir($logDir);
-        file_put_contents($logDir . '/log.txt', $log_entry, FILE_APPEND);
     }
 }
 
