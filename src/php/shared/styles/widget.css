@@ -1,0 +1,237 @@
+:root {
+    --page-bg: #f7f7f7;
+    --panel-bg: #ffffff;
+    --muted: #5f6d79;
+    --text: #091739;
+    --border: #bfbfbf;
+    --surface: #ffffff;
+    --accent: #036ce5;
+    --accent-hover: #0b7cff;
+    --accent-active: #2f8fff;
+    --radius-lg: 10px;
+    --radius-md: 8px;
+    --radius-sm: 7px;
+    --space-xxs: 6px;
+    --space-xs: 8px;
+    --space-sm: 10px;
+    --space-md: 12px;
+    --space-lg: 14px;
+    --space-xl: 16px;
+    --space-xxl: 24px;
+    --font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    --font-size: 14px;
+    --line-height: 1.45;
+    --font-size-sm: 12px;
+    --font-size-lg: 13px;
+    --letter-spacing-wide: 0.08em;
+    --letter-spacing-tight: 0.02em;
+    --log-height: 250px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: var(--page-bg);
+    color: var(--text);
+    font: var(--font-size)/var(--line-height) var(--font-family);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xxl);
+    padding: var(--space-md) 20px 20px;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.panel {
+    background: var(--panel-bg);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+}
+
+.panel.settings {
+    flex: 0 0 300px;
+    overflow: auto;
+}
+
+.panel.output {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+
+.panel h2 {
+    margin: 0 0 10px;
+    font-size: var(--font-size-lg);
+    text-transform: uppercase;
+    letter-spacing: var(--letter-spacing-wide);
+    color: var(--text);
+}
+
+.panel.output h2 {
+    margin: 0;
+}
+
+
+.row {
+    display: grid;
+    gap: var(--space-xs);
+    margin-bottom: var(--space-sm);
+}
+
+label {
+    font-size: var(--font-size-sm);
+    color: var(--muted);
+    line-height: 1.3;
+}
+
+input, textarea, select {
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+}
+
+input:hover,
+textarea:hover,
+select:hover {
+    border-color: #000;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+    outline: none;
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+    border-color: #000;
+}
+
+textarea {
+    min-height: 90px;
+    resize: vertical;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--accent);
+    background: var(--panel-bg);
+    color: var(--accent);
+    cursor: pointer;
+    transition: transform 0.05s ease, border-color 0.2s ease;
+}
+
+.btn:hover {
+    border-color: var(--accent-hover);
+    color: var(--accent-hover);
+}
+
+.btn:active {
+    transform: translateY(1px);
+    border-color: var(--accent-active);
+    color: var(--accent-active);
+}
+
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+}
+
+.btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+}
+
+.field-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-xxs);
+}
+
+.panel-divider {
+    height: 1px;
+    background: #d1d6df;
+    margin: var(--space-md) 0;
+}
+
+#log {
+    flex: 0 0 auto;
+    height: var(--log-height);
+    min-height: 0;
+    overflow: auto;
+    font-size: var(--font-size-sm);
+    background: var(--panel-bg);
+    border-radius: var(--radius-md);
+    padding: var(--space-sm);
+    white-space: pre-wrap;
+}
+
+@media (max-width: 420px) {
+    .panel.settings {
+        flex-basis: 260px;
+    }
+
+    :root {
+        --log-height: 200px;
+    }
+
+    main {
+        padding: 10px 12px 16px;
+        gap: var(--space-xxl);
+    }
+
+    .panel {
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+    }
+
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .btn-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    input, textarea, select {
+        padding: 7px 9px;
+        border-radius: var(--radius-sm);
+    }
+
+    textarea {
+        min-height: 76px;
+    }
+
+    #log {
+        font-size: 11px;
+    }
+}

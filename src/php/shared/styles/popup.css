@@ -1,0 +1,110 @@
+:root {
+    --popup-left-min: 320px;
+    --popup-left-max: 420px;
+}
+
+html, body {
+    height: 100%;
+}
+
+body {
+    overflow: hidden;
+}
+
+main {
+    display: grid;
+    grid-template-columns: minmax(var(--popup-left-min), var(--popup-left-max)) 1fr;
+    gap: var(--space-xl);
+    padding: var(--space-md);
+    align-items: stretch;
+    height: 100%;
+    overflow: hidden;
+}
+
+.panel.settings,
+.panel.logs {
+    height: 100%;
+}
+
+.panel.logs {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#log {
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto;
+    border: 1px solid var(--border);
+}
+
+.tabs {
+    display: flex;
+    gap: var(--space-xxs);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-xxl);
+}
+
+.tab {
+    padding: var(--space-xxs) 0 var(--space-sm) 0;
+    margin-right: var(--space-sm);
+    border: none;
+    border-bottom: 1px solid transparent;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    font-size: var(--font-size);
+    letter-spacing: var(--letter-spacing-tight);
+}
+
+.tab.active {
+    border-bottom-color: var(--accent);
+}
+
+.tab-panel {
+    display: none;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+@media (max-width: 980px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 420px) {
+    main {
+        padding: 10px 12px 16px;
+        gap: var(--space-md);
+    }
+
+    .panel {
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+    }
+
+    .btn-row {
+        grid-template-columns: 1fr;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    input, textarea {
+        padding: 7px 9px;
+        border-radius: var(--radius-sm);
+    }
+
+    textarea {
+        min-height: 76px;
+    }
+
+    #log {
+        font-size: 11px;
+    }
+}
