@@ -31,10 +31,10 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
 
 # Установка конфигурационных параметров решения: замените на свои значения
 # и не забудьте указать актуальный APP_SECRET_KEY при запуске (но не храните его в системе контроля версий)
-ENV APP_ID=00000000-0000-0000-0000-000000000047
-ENV APP_UID=server-draft.vendortest
+ENV APP_ID=195d5446-9da8-47ee-abb9-e808e4f283d7
+ENV APP_UID=php-demo-app.moysklad
 ENV APP_BASE_URL=https://php-demo.testms-test.lognex.ru
-ENV APP_SECRET_KEY=6snp2JLiINWAAkNoFyzN5MGmV9B3AAycB9IaJaZnr3aN2tg0yyOORv7zpsID6jOv4CY9xVuyuOmUHELhvnHSBNCAbFwFXOsV0MUzs5G5qW3wuwJDEgPjRZGmxTV8PrGI
+ENV APP_SECRET_KEY=secret-key-example
 
 # Порт, который будет слушать Apache
 EXPOSE 80
