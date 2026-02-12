@@ -3,8 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DummyApp</title>
-    <meta name="description" content="DummyApp for Apps Catalog of MoySklad">
+    <title>PHP Demo App iframe</title>
     <style>
         :root {
             --page-bg: #f7f7f7;
