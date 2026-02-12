@@ -161,18 +161,6 @@
             color: var(--accent-active);
         }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-xs);
-        }
-
-        .btn-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-xs);
-        }
-
         .field-row {
             display: grid;
             grid-template-columns: 1fr;
@@ -183,18 +171,6 @@
             height: 1px;
             background: #d1d6df;
             margin: var(--space-md) 0;
-        }
-
-        #log {
-            flex: 0 0 auto;
-            height: var(--log-height);
-            min-height: 0;
-            overflow: auto;
-            font-size: var(--font-size-sm);
-            background: var(--panel-bg);
-            border-radius: var(--radius-md);
-            padding: var(--space-sm);
-            white-space: pre-wrap;
         }
 
         .iframe-layout {
@@ -211,7 +187,7 @@
 
         .status-box {
             border-radius: var(--radius-md);
-            padding: var(--space-md);
+            padding: var(--space-xl) var(--space-md) var(--space-md);
             border: 1px dashed var(--border);
             background: #f6f7fb;
         }
@@ -220,11 +196,10 @@
             font-size: var(--font-size-sm);
             letter-spacing: var(--letter-spacing-wide);
             text-transform: uppercase;
-            margin-bottom: var(--space-xs);
         }
 
         .status-box p {
-            margin: 0;
+            margin: var(--space-xs) 0 0;
         }
 
         .status-required {
@@ -266,14 +241,6 @@
                 border-radius: var(--radius-md);
             }
 
-            .grid-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .btn-row {
-                grid-template-columns: 1fr;
-            }
-
             .btn {
                 width: 100%;
             }
@@ -285,10 +252,6 @@
 
             textarea {
                 min-height: 76px;
-            }
-
-            #log {
-                font-size: 11px;
             }
         }
     </style>

@@ -92,6 +92,10 @@
             margin: 0;
         }
 
+        .hint {
+            cursor: default;
+        }
+
         .row {
             display: grid;
             gap: var(--space-xs);
@@ -248,10 +252,14 @@
 <body>
 <main>
     <section class="panel settings">
-        <h2>Текущий пользователь</h2>
+        <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API, используя contextKey">
+            Текущий пользователь <span class="hint">(?)</span>
+        </h2>
         <div><?= $uid ?> (<?= $fio ?>)</div>
         <div class="panel-divider"></div>
-        <h2>Открытый объект</h2>
+        <h2 title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">
+            Открытый объект <span class="hint">(?)</span>
+        </h2>
         <div id="object">—</div>
         <div class="panel-divider"></div>
         <h2>good-folder-selector</h2>
