@@ -30,7 +30,7 @@ RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-av
     && echo "ServerName localhost" >> /etc/apache2/apache2.conf
 
 # Установка конфигурационных параметров решения: замените на свои значения
-# и не забудьте указать актуальный APP_SECRET_KEY при запуске (но не храните его в системе контроля версий)
+# и не забудьте указать актуальный APP_SECRET_KEY при запуске (но не храните его в системе контроля версий!)
 ENV APP_ID=195d5446-9da8-47ee-abb9-e808e4f283d7
 ENV APP_UID=php-demo-app.moysklad
 ENV APP_BASE_URL=https://php-demo.testms-test.lognex.ru
