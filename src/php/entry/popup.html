@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>DummyApp widget</title>
+    <title>DummyApp Popup</title>
     <style>
         :root {
             --page-bg: #f7f7f7;
@@ -33,10 +33,16 @@
             --letter-spacing-wide: 0.08em;
             --letter-spacing-tight: 0.02em;
             --log-height: 250px;
+            --popup-left-min: 320px;
+            --popup-left-max: 420px;
         }
 
         * {
             box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
         }
 
         body {
@@ -47,16 +53,17 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         main {
-            display: flex;
-            flex-direction: column;
-            gap: var(--space-xxl);
-            padding: var(--space-md) 20px 20px;
-            flex: 1;
-            min-height: 0;
-            box-sizing: border-box;
+            display: grid;
+            grid-template-columns: minmax(var(--popup-left-min), var(--popup-left-max)) 1fr;
+            gap: var(--space-xl);
+            padding: var(--space-md);
+            align-items: stretch;
+            height: 100%;
+            overflow: hidden;
         }
 
         .panel {
@@ -70,14 +77,11 @@
             overflow: auto;
         }
 
-        .panel.output {
-            flex: 0 0 auto;
+        .panel.logs {
+            height: 100%;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            border: none;
-            background: transparent;
-            padding: 0;
+            min-height: 0;
         }
 
         .panel h2 {
@@ -86,10 +90,6 @@
             text-transform: uppercase;
             letter-spacing: var(--letter-spacing-wide);
             color: var(--text);
-        }
-
-        .panel.output h2 {
-            margin: 0;
         }
 
         .row {
@@ -186,38 +186,64 @@
         }
 
         #log {
-            flex: 0 0 auto;
-            height: var(--log-height);
+            flex: 1 1 auto;
             min-height: 0;
+            height: auto;
             overflow: auto;
             font-size: var(--font-size-sm);
             background: var(--panel-bg);
+            border: 1px solid var(--border);
             border-radius: var(--radius-md);
             padding: var(--space-sm);
             white-space: pre-wrap;
         }
 
+        .tabs {
+            display: flex;
+            gap: var(--space-xxs);
+            flex-wrap: wrap;
+            margin-bottom: var(--space-xxl);
+        }
+
+        .tab {
+            padding: var(--space-xxs) 0 var(--space-sm) 0;
+            margin-right: var(--space-sm);
+            border: none;
+            border-bottom: 1px solid transparent;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-size: var(--font-size);
+            letter-spacing: var(--letter-spacing-tight);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @media (max-width: 980px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
         @media (max-width: 420px) {
-            .panel.settings {
-                flex-basis: 260px;
-            }
-
-            :root {
-                --log-height: 200px;
-            }
-
             main {
                 padding: 10px 12px 16px;
-                gap: var(--space-xxl);
+                gap: var(--space-md);
             }
 
             .panel {
                 padding: var(--space-md);
                 border-radius: var(--radius-md);
-            }
-
-            .grid-2 {
-                grid-template-columns: 1fr;
             }
 
             .btn-row {
@@ -243,78 +269,68 @@
         }
     </style>
     <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk@1/dist/widget.min.js"></script>
+            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk/dist/widget.min.js"></script>
+    <script type="text/javascript"
+            src="https://apps-api.moysklad.ru/js/ns/appstore/app/v1/moysklad-iframe-expand-3.js"></script>
 </head>
 <body>
 <main>
     <section class="panel settings">
-        <h2>good-folder-selector</h2>
-        <div class="row">
-            <button class="btn" id="btnSelectFolder">Выбрать</button>
+        <div class="tabs" role="tablist" aria-label="SDK sections">
+            <button class="tab active" data-tab="good-folder" role="tab" aria-selected="true">Выбор группы товаров
+            </button>
+            <button class="tab" data-tab="navigation" role="tab" aria-selected="false">Навигация</button>
+            <button class="tab" data-tab="dialogs" role="tab" aria-selected="false">Диалог</button>
+            <button class="tab" data-tab="popups" role="tab" aria-selected="false">Попап</button>
         </div>
-        <div class="panel-divider"></div>
-        <h2>navigation-service</h2>
-        <div class="row field-row">
-            <label for="navigatePath">Путь</label>
-            <input id="navigatePath" value="#customerorder?sort=o.moment%20d">
+        <div class="tab-panel active" data-tab-panel="good-folder" role="tabpanel">
+            <h2>good-folder-selector</h2>
+            <div class="row">
+                <button class="btn" id="btnSelectFolder">Выбрать</button>
+            </div>
         </div>
-        <div class="row">
-            <button class="btn" id="btnNavigate">Перейти</button>
+        <div class="tab-panel" data-tab-panel="navigation" role="tabpanel">
+            <h2>navigation-service</h2>
+            <div class="row field-row">
+                <label for="navigatePath">Путь</label>
+                <input id="navigatePath" value="#customerorder?sort=o.moment%20d">
+            </div>
+            <div class="row">
+                <button class="btn" id="btnNavigate">Перейти</button>
+            </div>
         </div>
-        <div class="panel-divider"></div>
-        <h2>standard-dialogs</h2>
-        <div class="row field-row">
-            <label for="dialogText">Текст диалога</label>
-            <input id="dialogText" value="Hello from SDK">
+        <div class="tab-panel" data-tab-panel="dialogs" role="tabpanel">
+            <h2>standard-dialogs</h2>
+            <div class="row field-row">
+                <label for="dialogText">Текст диалога</label>
+                <input id="dialogText" value="Hello from SDK">
+            </div>
+            <div class="row field-row">
+                <label for="dialogButtons">Кнопки диалога (JSON)</label>
+                <textarea
+                    id="dialogButtons">[{ "name": "Yes", "caption": "Да, удалить" },{ "name": "No", "caption": "Нет" }]</textarea>
+            </div>
+            <div class="row">
+                <button class="btn" id="btnDialog">Открыть</button>
+            </div>
         </div>
-        <div class="row field-row">
-            <label for="dialogButtons">Кнопки диалога (JSON)</label>
-            <textarea
-                id="dialogButtons">[{ "name": "Yes", "caption": "Да, удалить" },{ "name": "No", "caption": "Нет" }]</textarea>
-        </div>
-        <div class="row">
-            <button class="btn" id="btnDialog">Открыть</button>
-        </div>
-        <div class="panel-divider"></div>
-        <h2>dirty-state</h2>
-        <div class="row grid-2">
-            <button class="btn" id="btnSetDirty">Установить</button>
-            <button class="btn" id="btnClearDirty">Очистить</button>
-        </div>
-        <div class="panel-divider"></div>
-        <h2>validation-feedback</h2>
-        <div class="row field-row">
-            <label for="validationPayload">Параметры валидации (JSON или text)</label>
-            <textarea id="validationPayload">{ "name": "ValidationFeedback", "correlationId": 1, "messageId": 1, "valid": false, "message": "Нужно больше печенья" }</textarea>
-        </div>
-        <div class="row">
-            <button class="btn" id="btnValidation">Подтвердить</button>
-        </div>
-        <div class="panel-divider"></div>
-        <h2>update-provider</h2>
-        <div class="row field-row">
-            <label for="updatePayload">Параметры обновления (JSON or text)</label>
-            <textarea id="updatePayload">{ "name": "1" }</textarea>
-        </div>
-        <div class="row">
-            <button class="btn" id="btnUpdate">Обновить</button>
-        </div>
-        <div class="panel-divider"></div>
-        <h2>Popups</h2>
-        <div class="row field-row">
-            <label for="popupName">Название попапа</label>
-            <input id="popupName" value="some-popup">
-        </div>
-        <div class="row field-row">
-            <label for="popupParams">Параметры попапа (JSON)</label>
-            <textarea id="popupParams">{ "foo": "bar" }</textarea>
-        </div>
-        <div class="row btn-row">
-            <button class="btn" id="btnShowPopup">Открыть</button>
-            <button class="btn" id="btnClosePopup">Закрыть</button>
+        <div class="tab-panel" data-tab-panel="popups" role="tabpanel">
+            <h2>Popups</h2>
+            <div class="row field-row">
+                <label for="popupName">Название попапа</label>
+                <input id="popupName" value="some-popup">
+            </div>
+            <div class="row field-row">
+                <label for="popupParams">Параметры попапа (JSON)</label>
+                <textarea id="popupParams">{ "foo": "bar" }</textarea>
+            </div>
+            <div class="row btn-row">
+                <button class="btn" id="btnShowPopup">Открыть</button>
+                <button class="btn" id="btnClosePopup">Закрыть</button>
+            </div>
         </div>
     </section>
-    <section class="panel output">
+    <section class="panel logs">
         <h2>Логи</h2>
         <div id="log"></div>
     </section>
@@ -337,7 +353,7 @@
 
     window.widgetLog = widgetLog;
 
-    const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
+    const AUTO_OPEN_FEEDBACK_DELAY_MS = 3000;
 
     const sdkNamespace = window.WidgetSDK;
     // Guard against missing SDK script.
@@ -484,6 +500,25 @@
         sdk.onSave(message => widgetLog('Event: Save', message));
     }
 
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const panels = Array.from(document.querySelectorAll('.tab-panel'));
+
+    const setActiveTab = (tabId) => {
+        tabs.forEach(tab => {
+            const isActive = tab.dataset.tab === tabId;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        panels.forEach(panel => {
+            const isActive = panel.dataset.tabPanel === tabId;
+            panel.classList.toggle('active', isActive);
+        });
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
+    });
+
     document.getElementById('btnSelectFolder').addEventListener('click', async () => {
         try {
             const res = await sdk.selectGoodFolder();
@@ -519,62 +554,6 @@
             widgetLog('showDialog response', res);
         } catch (e) {
             widgetLog('showDialog error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnSetDirty').addEventListener('click', () => {
-        const res = sdk.setDirty();
-
-        widgetLog('setDirty sent', res);
-    });
-
-    document.getElementById('btnClearDirty').addEventListener('click', () => {
-        const res = sdk.clearDirty();
-
-        widgetLog('clearDirty sent', res);
-    });
-
-    document.getElementById('btnValidation').addEventListener('click', () => {
-        const payload = parseMaybeJson(document.getElementById('validationPayload').value);
-
-        let valid = false;
-        let message = undefined;
-        let changeMessageId = undefined;
-
-        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-            if (payload.valid !== undefined) {
-                valid = payload.valid;
-            }
-
-            if (payload.message !== undefined) {
-                message = payload.message;
-            }
-
-            if (payload.changeMessageId !== undefined) {
-                changeMessageId = payload.changeMessageId;
-            }
-
-            if (payload.correlationId !== undefined) {
-                changeMessageId = payload.correlationId;
-            }
-        } else if (payload !== undefined) {
-            message = String(payload);
-        }
-
-        const res = sdk.validationFeedback(valid, message, changeMessageId);
-
-        widgetLog('validationFeedback sent', res);
-    });
-
-    document.getElementById('btnUpdate').addEventListener('click', async () => {
-        const payload = parseMaybeJson(document.getElementById('updatePayload').value);
-
-        try {
-            const res = await sdk.update(payload);
-
-            widgetLog('update response', res);
-        } catch (e) {
-            widgetLog('update error', {message: e.message, name: e.name});
         }
     });
 

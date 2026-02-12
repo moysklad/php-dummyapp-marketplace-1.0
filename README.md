@@ -21,9 +21,7 @@
 
 Решение встраивает виджеты на следующие экраны:
 
-* Контрагент (entity.counterparty.edit)
 * Заказ покупателя (document.customerorder.edit)
-* Отгрузка (document.demand.edit)
 * Счет покупателю (document.invoiceout.edit)
 
 Цель данных виджетов - продемонстрировать, как работает система виджетов в UI МоегоСклада. 
@@ -80,26 +78,25 @@
 
 ### Основные файлы и точки входа
 
-* `Dockerfile`                      - конфигурация для запуска решения в docker-контейнере
-* `entry/iframe/php-app.php`        - контроллер отображения содержимого iframe
-* `entry/popup/some-popup.php`      - контроллер отображения popup
-* `entry/widget/*.php`              - контроллеры виджетов
-* `api/vendor-endpoint.php`         - REST-endpoint для обработки запросов по Vendor API
-* `api/update-settings.php`         - контроллер обновления настроек
-* `api/button.php`                  - обработка нажатий кастомных кнопок
-* `lib/lib.php`                     - общие классы приложения (конфигурация, модели данных, врапперы доступа к API МоегоСклада)
-* `lib/jwt.lib.php`                 - JWT PHP библиотека (копипаст из https://github.com/firebase/php-jwt)
-* `lib/user-context-loader.inc.php` - общий код получения контекста пользователя через Vendor API
-* `config.example.php`              - пример конфигурации (используйте как шаблон для `config.php`)
+* `Dockerfile`                       - конфигурация для запуска решения в docker-контейнере
+* `entry/iframe.php`                 - контроллер отображения содержимого iframe
+* `entry/popup.php`                  - контроллер отображения popup
+* `entry/widget-customerorder.php`   - контроллер виджета для Заказа покупателя
+* `entry/widget-invoiceout.php`      - контроллер виджета для Счета покупателю
+* `api/vendor-endpoint.php`          - REST-endpoint для обработки запросов по Vendor API
+* `api/update-settings.php`          - контроллер обновления настроек
+* `api/button.php`                   - обработка нажатий кастомных кнопок
+* `lib/lib.php`                      - общие классы приложения (конфигурация, модели данных, врапперы доступа к API МоегоСклада)
+* `lib/jwt.lib.php`                  - JWT PHP библиотека (копипаст из https://github.com/firebase/php-jwt)
+* `lib/user-context-loader.inc.php`  - общий код получения контекста пользователя через Vendor API
+* `config.example.php`               - пример конфигурации (используйте как шаблон для `config.php`)
 
 ### Файлы виджетов
 
-* `entry/widget/counterparty.php`    - виджет в карточке Контрагента (entity.counterparty.edit)
-* `entry/widget/customerorder.php`   - виджет в Заказе покупателя (document.customerorder.edit)
-* `entry/widget/demand.php`          - виджет в Отгрузке (document.demand.edit)
-* `entry/widget/invoiceout.php`      - виджет в Счете покупателю (document.invoiceout.edit)
-* `entry/widget/widget.inc.php`      - общий код контроллеров виджетов
-* `entry/widget/get-object.php`      - API получения объекта по JSON API
+* `entry/widget-customerorder.php`   - виджет в Заказе покупателя (document.customerorder.edit)
+* `entry/widget-invoiceout.php`      - виджет в Счете покупателю (document.invoiceout.edit)
+* `entry/widget.inc.php`             - общий код контроллеров виджетов
+* `entry/widget.html`                - HTML-шаблон виджета
 
 ### Утилиты
 
@@ -114,4 +111,4 @@
 
 ### Данные
 
-Состояние решений хранится в файловой системе (сериализацией) по одному файлу на каждую установку в `data/*.app` 
+Состояние решений хранится в файловой системе (сериализацией) по одному файлу на каждую установку в `src/php/data/*.app` 
