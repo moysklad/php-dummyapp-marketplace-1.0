@@ -2,7 +2,7 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="https://apps-api.moysklad.ru/xml/ns/appstore/app/v2 https://apps-api.moysklad.ru/xml/ns/appstore/app/v2/application-v2.xsd">
     <iframe>
-        <sourceUrl><?= cfg()->appBaseUrl ?>/entry/iframe/php-app.php</sourceUrl>
+        <sourceUrl><?= cfg()->appBaseUrl ?>/entry/iframe.php</sourceUrl>
         <expand>true</expand>
     </iframe>
     <vendorApi>
@@ -13,24 +13,8 @@
         <scope>admin</scope>
     </access>
     <widgets>
-        <entity.counterparty.edit>
-            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget/counterparty.php</sourceUrl>
-            <height>
-                <fixed>525px</fixed>
-            </height>
-            <supports>
-                <open-feedback/>
-                <dirty-state/>
-                <save-handler/>
-            </supports>
-            <uses>
-                <good-folder-selector/>
-                <standard-dialogs/>
-                <navigation-service/>
-            </uses>
-        </entity.counterparty.edit>
         <document.customerorder.edit>
-            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget/customerorder.php</sourceUrl>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget-customerorder.php</sourceUrl>
             <supports>
                 <open-feedback/>
                 <dirty-state/>
@@ -46,28 +30,8 @@
                 <navigation-service/>
             </uses>
         </document.customerorder.edit>
-        <document.demand.edit>
-            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget/demand.php</sourceUrl>
-            <height>
-                <fixed>525px</fixed>
-            </height>
-            <supports>
-                <open-feedback/>
-                <dirty-state/>
-                <save-handler/>
-                <update-provider/>
-                <change-handler>
-                    <validation-feedback/>
-                </change-handler>
-            </supports>
-            <uses>
-                <good-folder-selector/>
-                <standard-dialogs/>
-                <navigation-service/>
-            </uses>
-        </document.demand.edit>
         <document.invoiceout.edit>
-            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget/invoiceout.php</sourceUrl>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget-invoiceout.php</sourceUrl>
             <height>
                 <fixed>525px</fixed>
             </height>
@@ -90,7 +54,7 @@
     <popups>
         <popup>
             <name>some-popup</name>
-            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/popup/some-popup.php</sourceUrl>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/popup.php</sourceUrl>
             <uses>
                 <good-folder-selector/>
                 <standard-dialogs/>

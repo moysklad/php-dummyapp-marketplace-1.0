@@ -2,8 +2,8 @@
 
 use \Firebase\JWT\JWT;
 
-require_once __DIR__ . '/../shared/lib/lib.php';
-require_once __DIR__ . '/../shared/lib/jwt.lib.php';
+require_once __DIR__ . '/../lib/lib.php';
+require_once __DIR__ . '/../lib/jwt.lib.php';
 
 require_once __DIR__ . '/button.php';
 

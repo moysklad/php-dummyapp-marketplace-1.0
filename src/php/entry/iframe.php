@@ -1,5 +1,24 @@
 <?php
-require_once 'iframe.inc.php';
+require_once __DIR__ . '/../lib/lib.php';
+
+$context = require __DIR__ . '/../lib/user-context-loader.inc.php';
+
+$contextName = 'IFRAME';
+
+$app = AppInstance::loadApp($context['accountId']);
+
+$infoMessage = $app->infoMessage;
+$store = $app->store;
+$isSettingsRequired = $app->status != AppInstance::ACTIVATED;
+$storesValues = [];
+
+if ($context['isAdmin']) {
+    $stores = jsonApi()->stores();
+
+    foreach ($stores->rows as $v) {
+        $storesValues[] = $v->name;
+    }
+}
 ?>
 
 <!doctype html>
@@ -9,8 +28,8 @@ require_once 'iframe.inc.php';
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DummyApp</title>
     <meta name="description" content="DummyApp for Apps Catalog of MoySklad">
-    <link rel="stylesheet" href="../../shared/styles/widget.css">
-    <link rel="stylesheet" href="../../shared/styles/iframe.css">
+    <link rel="stylesheet" href="../shared/styles/widget.css">
+    <link rel="stylesheet" href="../shared/styles/iframe.css">
     <script type="text/javascript"
             src="https://apps-api.moysklad.ru/js/ns/appstore/app/v1/moysklad-iframe-expand-3.js"></script>
 </head>
@@ -19,9 +38,10 @@ require_once 'iframe.inc.php';
     <section class="panel">
         <h2>Информация о пользователе</h2>
         <ul class="info-list">
-            <li>Текущий пользователь: <?= $uid ?> (<?= $fio ?>)</li>
-            <li>Идентификатор аккаунта: <?= $accountId ?></li>
-            <li>Уровень доступа: <b><?= $isAdmin ? 'администратор аккаунта' : 'простой пользователь' ?></b></li>
+            <li>Текущий пользователь: <?= $context['uid'] ?> (<?= $context['fio'] ?>)</li>
+            <li>Идентификатор аккаунта: <?= $context['accountId'] ?></li>
+            <li>Уровень доступа: <b><?= $context['isAdmin'] ? 'администратор аккаунта' : 'простой пользователь' ?></b>
+            </li>
         </ul>
         <div class="panel-divider"></div>
         <h2>Состояние решения</h2>
@@ -29,9 +49,7 @@ require_once 'iframe.inc.php';
             <div class="status-title">
                 <?= $isSettingsRequired ? 'ТРЕБУЕТСЯ НАСТРОЙКА' : 'РЕШЕНИЕ ГОТОВО К РАБОТЕ' ?>
             </div>
-            <?php
-            if (!$isSettingsRequired) {
-                ?>
+            <?php if (!$isSettingsRequired) { ?>
                 <p>
                     Сообщение: <?= $infoMessage ?><br>
                     Выбран склад: <?= $store ?>
@@ -41,10 +59,8 @@ require_once 'iframe.inc.php';
     </section>
     <section class="panel">
         <h2>Форма настроек</h2>
-        <?php
-        if ($isAdmin) {
-            ?>
-            <form method="post" action="../../api/update-settings.php">
+        <?php if ($context['isAdmin']) { ?>
+            <form method="post" action="../api/update-settings.php">
                 <div class="row field-row">
                     <label for="infoMessage">Укажите сообщение</label>
                     <input id="infoMessage" type="text" name="infoMessage">
@@ -57,16 +73,12 @@ require_once 'iframe.inc.php';
                         <?php } ?>
                     </select>
                 </div>
-                <input type="hidden" name="accountId" value="<?= $accountId ?>"/>
+                <input type="hidden" name="accountId" value="<?= $context['accountId'] ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
-        <?php
-        } else {
-            ?>
+        <?php } else { ?>
             <p class="muted">Настройки доступны только администратору аккаунта</p>
-        <?php
-        }
-        ?>
+        <?php } ?>
     </section>
 </main>
 </body>

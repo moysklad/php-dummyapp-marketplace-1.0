@@ -1,6 +1,6 @@
 <?php
 
-require_once __DIR__ . '/../shared/lib/lib.php';
+require_once __DIR__ . '/../lib/lib.php';
 
 $infoMessage = $_POST['infoMessage'];
 $store = $_POST['store'];

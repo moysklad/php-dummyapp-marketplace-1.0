@@ -87,9 +87,9 @@
 * `api/vendor-endpoint.php`         - REST-endpoint для обработки запросов по Vendor API
 * `api/update-settings.php`         - контроллер обновления настроек
 * `api/button.php`                  - обработка нажатий кастомных кнопок
-* `shared/lib/lib.php`              - общие классы приложения (конфигурация, модели данных, врапперы доступа к API МоегоСклада)
-* `shared/lib/jwt.lib.php`          - JWT PHP библиотека (копипаст из https://github.com/firebase/php-jwt)
-* `shared/lib/user-context-loader.inc.php` - общий код получения контекста пользователя через Vendor API
+* `lib/lib.php`                     - общие классы приложения (конфигурация, модели данных, врапперы доступа к API МоегоСклада)
+* `lib/jwt.lib.php`                 - JWT PHP библиотека (копипаст из https://github.com/firebase/php-jwt)
+* `lib/user-context-loader.inc.php` - общий код получения контекста пользователя через Vendor API
 * `config.example.php`              - пример конфигурации (используйте как шаблон для `config.php`)
 
 ### Файлы виджетов
@@ -103,7 +103,7 @@
 
 ### Утилиты
 
-Для удобства отладки в папке `tools` находятся два скрипта:
+Для удобства отладки в папке `utils` находятся два скрипта:
 
 * `generate-descriptor.php`     - генерация дескриптора решения в соответствии с текущей конфигурацией
 * `generate-jwt.php`            - генерация JWT-токена (например, для выполнения запросов через Postman) 

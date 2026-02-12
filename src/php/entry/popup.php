@@ -1,5 +1,5 @@
 <?php
-require_once 'popup.inc.php';
+require_once __DIR__ . '/../lib/lib.php';
 ?>
 
 <!doctype html>
@@ -8,8 +8,8 @@ require_once 'popup.inc.php';
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>DummyApp Popup</title>
-    <link rel="stylesheet" href="../../shared/styles/widget.css">
-    <link rel="stylesheet" href="../../shared/styles/popup.css">
+    <link rel="stylesheet" href="../shared/styles/widget.css">
+    <link rel="stylesheet" href="../shared/styles/popup.css">
     <script type="text/javascript"
             src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk/dist/widget.min.js"></script>
     <script type="text/javascript"
@@ -26,24 +26,24 @@ require_once 'popup.inc.php';
             <button class="tab" data-tab="popups" role="tab" aria-selected="false">Попап</button>
         </div>
         <div class="tab-panel active" data-tab-panel="good-folder" role="tabpanel">
-            <?php include __DIR__ . '/../../shared/partials/good-folder-selector.php'; ?>
+            <?php include __DIR__ . '/../shared/partials/good-folder-selector.php'; ?>
         </div>
         <div class="tab-panel" data-tab-panel="navigation" role="tabpanel">
-            <?php include __DIR__ . '/../../shared/partials/navigation-service.php'; ?>
+            <?php include __DIR__ . '/../shared/partials/navigation-service.php'; ?>
         </div>
         <div class="tab-panel" data-tab-panel="dialogs" role="tabpanel">
-            <?php include __DIR__ . '/../../shared/partials/standard-dialogs.php'; ?>
+            <?php include __DIR__ . '/../shared/partials/standard-dialogs.php'; ?>
         </div>
         <div class="tab-panel" data-tab-panel="popups" role="tabpanel">
-            <?php include __DIR__ . '/../../shared/partials/popups.php'; ?>
+            <?php include __DIR__ . '/../shared/partials/popups.php'; ?>
         </div>
     </section>
     <section class="panel logs">
-        <?php include __DIR__ . '/../../shared/partials/log.php'; ?>
+        <?php include __DIR__ . '/../shared/partials/log.php'; ?>
     </section>
 </main>
-<script src="../../shared/scripts/widget-utils.js"></script>
-<script src="../../shared/scripts/widget.js"></script>
-<script src="../../shared/scripts/popup-tabs.js"></script>
+<script src="../shared/scripts/widget-utils.js"></script>
+<script src="../shared/scripts/widget.js"></script>
+<script src="../shared/scripts/popup-tabs.js"></script>
 </body>
 </html>
