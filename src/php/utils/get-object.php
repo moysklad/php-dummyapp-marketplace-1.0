@@ -2,9 +2,7 @@
 require_once __DIR__ . '/../lib/lib.php';
 
 $entitiesMap = [
-    'counterparty' => 'Контрагент',
     'customerorder' => 'Заказ покупателя',
-    'demand' => 'Отгрузка',
     'invoiceout' => 'Счет покупателю',
 ];
 

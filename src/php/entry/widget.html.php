@@ -248,6 +248,12 @@
 <body>
 <main>
     <section class="panel settings">
+        <h2>Текущий пользователь</h2>
+        <div><?= $uid ?> (<?= $fio ?>)</div>
+        <div class="panel-divider"></div>
+        <h2>Открытый объект</h2>
+        <div id="object">—</div>
+        <div class="panel-divider"></div>
         <h2>good-folder-selector</h2>
         <div class="row">
             <button class="btn" id="btnSelectFolder">Выбрать</button>
@@ -336,6 +342,9 @@
     };
 
     window.widgetLog = widgetLog;
+
+    const getObjectUrl = <?= json_encode($getObjectUrl ?? '') ?>;
+    const objectEl = document.getElementById('object');
 
     const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
 
@@ -465,6 +474,17 @@
         sdk.onOpen(message => {
             widgetLog('Event: Open', message);
             maybeAutoOpenFeedback(message);
+
+            if (objectEl && getObjectUrl && message && message.objectId) {
+                fetch(`${getObjectUrl}${message.objectId}`)
+                    .then(response => response.text())
+                    .then(text => {
+                        objectEl.textContent = text;
+                    })
+                    .catch(error => {
+                        widgetLog('object fetch error', {message: error.message || String(error)});
+                    });
+            }
         });
         sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));
         sdk.onChange(message => {
