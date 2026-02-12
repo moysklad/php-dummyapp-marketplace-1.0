@@ -26,7 +26,7 @@ class AppConfig
     }
 }
 
-$cfg = new AppConfig(require(__DIR__ . '/config.php'));
+$cfg = new AppConfig(require(__DIR__ . '/../../config.php'));
 
 function dataDir(): string
 {
@@ -257,7 +257,7 @@ class AppInstance
 
     function persist()
     {
-        @mkdir(dataDir(), 0777, true);
+        @mkdir(dataDir());
         file_put_contents($this->filename(), serialize($this));
     }
 

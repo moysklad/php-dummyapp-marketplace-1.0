@@ -13,7 +13,7 @@ require_once 'widget.inc.php';
     <title>DummyApp: <?= $contextName ?></title>
     <link rel="stylesheet" href="../../shared/styles/widget.css">
     <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk/dist/widget.min.js"></script>
+            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk@1/dist/widget.min.js"></script>
 </head>
 <body>
 <main>
