@@ -165,6 +165,13 @@
             color: var(--accent-active);
         }
 
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            border-color: var(--border);
+            color: var(--muted);
+        }
+
         .grid-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -384,6 +391,38 @@
         }
     };
 
+    const sdkControlIds = [
+        'btnSelectFolder',
+        'btnNavigate',
+        'btnDialog',
+        'btnSetDirty',
+        'btnClearDirty',
+        'btnValidation',
+        'btnUpdate',
+        'btnShowPopup',
+        'btnClosePopup',
+    ];
+
+    const setSdkControlsEnabled = (enabled) => {
+        sdkControlIds.forEach(id => {
+            const el = document.getElementById(id);
+
+            if (!el) {
+                return;
+            }
+
+            el.disabled = !enabled;
+
+            if (enabled) {
+                el.removeAttribute('title');
+                el.removeAttribute('aria-disabled');
+            } else {
+                el.setAttribute('title', 'SDK недоступен');
+                el.setAttribute('aria-disabled', 'true');
+            }
+        });
+    };
+
     let objectState = {};
 
     // Safe shallow-ish equality for diffing; falls back to JSON compare for objects.
@@ -455,30 +494,22 @@
 
     if (!sdk) {
         widgetLog('SDK init skipped', {reason: 'WidgetSDK is not available'});
+        setSdkControlsEnabled(false);
     } else {
         widgetLog('SDK initialized', {debug: true});
-    }
+        setSdkControlsEnabled(true);
 
-    // Auto-open feedback if the Open event provides a correlation id.
-    const maybeAutoOpenFeedback = (openMessage) => {
-        const resolvedId = openMessage?.messageId;
+        // Auto-open feedback after Open event.
+        const maybeAutoOpenFeedback = (openMessage) => {
+            const resolvedId = openMessage?.messageId;
 
-        if (resolvedId === null || resolvedId === undefined) {
-            widgetLog('auto openFeedback skipped', {reason: 'missing correlationId'});
+            setTimeout(() => {
+                const res = sdk.openFeedback(resolvedId);
 
-            return;
-        }
+                widgetLog('auto openFeedback sent', res);
+            }, AUTO_OPEN_FEEDBACK_DELAY_MS);
+        };
 
-        setTimeout(() => {
-            const res = sdk ? sdk.openFeedback(resolvedId) : null;
-
-            widgetLog('auto openFeedback sent', res);
-        }, AUTO_OPEN_FEEDBACK_DELAY_MS);
-    };
-
-    if (!sdk) {
-        widgetLog('SDK events skipped', {reason: 'WidgetSDK is not available'});
-    } else {
         sdk.onOpen(message => {
             widgetLog('Event: Open', message);
             maybeAutoOpenFeedback(message);
@@ -510,120 +541,120 @@
             objectState = message.objectState;
         });
         sdk.onSave(message => widgetLog('Event: Save', message));
+
+        document.getElementById('btnSelectFolder').addEventListener('click', async () => {
+            try {
+                const res = await sdk.selectGoodFolder();
+
+                widgetLog('selectGoodFolder response', res);
+            } catch (e) {
+                widgetLog('selectGoodFolder error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnNavigate').addEventListener('click', async () => {
+            const path = document.getElementById('navigatePath').value.trim() || '/';
+
+            try {
+                const res = await sdk.navigateTo(path, 'blank');
+
+                widgetLog('navigateTo response', res);
+            } catch (e) {
+                widgetLog('navigateTo error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnDialog').addEventListener('click', async () => {
+            const text = document.getElementById('dialogText').value.trim() || 'Dialog';
+            const buttonsPayload = parseMaybeJson(document.getElementById('dialogButtons').value);
+
+            try {
+                const normalizedButtons = Array.isArray(buttonsPayload)
+                    ? buttonsPayload
+                    : (buttonsPayload && Array.isArray(buttonsPayload.buttons) ? buttonsPayload.buttons : undefined);
+                const res = await sdk.showDialog(text, normalizedButtons);
+
+                widgetLog('showDialog response', res);
+            } catch (e) {
+                widgetLog('showDialog error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnSetDirty').addEventListener('click', () => {
+            const res = sdk.setDirty();
+
+            widgetLog('setDirty sent', res);
+        });
+
+        document.getElementById('btnClearDirty').addEventListener('click', () => {
+            const res = sdk.clearDirty();
+
+            widgetLog('clearDirty sent', res);
+        });
+
+        document.getElementById('btnValidation').addEventListener('click', () => {
+            const payload = parseMaybeJson(document.getElementById('validationPayload').value);
+
+            let valid = false;
+            let message = undefined;
+            let changeMessageId = undefined;
+
+            if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
+                if (payload.valid !== undefined) {
+                    valid = payload.valid;
+                }
+
+                if (payload.message !== undefined) {
+                    message = payload.message;
+                }
+
+                if (payload.changeMessageId !== undefined) {
+                    changeMessageId = payload.changeMessageId;
+                }
+
+                if (payload.correlationId !== undefined) {
+                    changeMessageId = payload.correlationId;
+                }
+            } else if (payload !== undefined) {
+                message = String(payload);
+            }
+
+            const res = sdk.validationFeedback(valid, message, changeMessageId);
+
+            widgetLog('validationFeedback sent', res);
+        });
+
+        document.getElementById('btnUpdate').addEventListener('click', async () => {
+            const payload = parseMaybeJson(document.getElementById('updatePayload').value);
+
+            try {
+                const res = await sdk.update(payload);
+
+                widgetLog('update response', res);
+            } catch (e) {
+                widgetLog('update error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnShowPopup').addEventListener('click', async () => {
+            const name = document.getElementById('popupName').value.trim() || 'popup';
+            const params = parseMaybeJson(document.getElementById('popupParams').value);
+
+            try {
+                const res = await sdk.showPopup(name, params);
+
+                widgetLog('showPopup response', res);
+            } catch (e) {
+                widgetLog('showPopup error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnClosePopup').addEventListener('click', () => {
+            const res = sdk.closePopup({ok: true});
+
+            widgetLog('closePopup sent', res);
+        });
     }
-
-    document.getElementById('btnSelectFolder').addEventListener('click', async () => {
-        try {
-            const res = await sdk.selectGoodFolder();
-
-            widgetLog('selectGoodFolder response', res);
-        } catch (e) {
-            widgetLog('selectGoodFolder error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnNavigate').addEventListener('click', async () => {
-        const path = document.getElementById('navigatePath').value.trim() || '/';
-
-        try {
-            const res = await sdk.navigateTo(path, 'blank');
-
-            widgetLog('navigateTo response', res);
-        } catch (e) {
-            widgetLog('navigateTo error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnDialog').addEventListener('click', async () => {
-        const text = document.getElementById('dialogText').value.trim() || 'Dialog';
-        const buttonsPayload = parseMaybeJson(document.getElementById('dialogButtons').value);
-
-        try {
-            const normalizedButtons = Array.isArray(buttonsPayload)
-                ? buttonsPayload
-                : (buttonsPayload && Array.isArray(buttonsPayload.buttons) ? buttonsPayload.buttons : undefined);
-            const res = await sdk.showDialog(text, normalizedButtons);
-
-            widgetLog('showDialog response', res);
-        } catch (e) {
-            widgetLog('showDialog error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnSetDirty').addEventListener('click', () => {
-        const res = sdk.setDirty();
-
-        widgetLog('setDirty sent', res);
-    });
-
-    document.getElementById('btnClearDirty').addEventListener('click', () => {
-        const res = sdk.clearDirty();
-
-        widgetLog('clearDirty sent', res);
-    });
-
-    document.getElementById('btnValidation').addEventListener('click', () => {
-        const payload = parseMaybeJson(document.getElementById('validationPayload').value);
-
-        let valid = false;
-        let message = undefined;
-        let changeMessageId = undefined;
-
-        if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
-            if (payload.valid !== undefined) {
-                valid = payload.valid;
-            }
-
-            if (payload.message !== undefined) {
-                message = payload.message;
-            }
-
-            if (payload.changeMessageId !== undefined) {
-                changeMessageId = payload.changeMessageId;
-            }
-
-            if (payload.correlationId !== undefined) {
-                changeMessageId = payload.correlationId;
-            }
-        } else if (payload !== undefined) {
-            message = String(payload);
-        }
-
-        const res = sdk.validationFeedback(valid, message, changeMessageId);
-
-        widgetLog('validationFeedback sent', res);
-    });
-
-    document.getElementById('btnUpdate').addEventListener('click', async () => {
-        const payload = parseMaybeJson(document.getElementById('updatePayload').value);
-
-        try {
-            const res = await sdk.update(payload);
-
-            widgetLog('update response', res);
-        } catch (e) {
-            widgetLog('update error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnShowPopup').addEventListener('click', async () => {
-        const name = document.getElementById('popupName').value.trim() || 'popup';
-        const params = parseMaybeJson(document.getElementById('popupParams').value);
-
-        try {
-            const res = await sdk.showPopup(name, params);
-
-            widgetLog('showPopup response', res);
-        } catch (e) {
-            widgetLog('showPopup error', {message: e.message, name: e.name});
-        }
-    });
-
-    document.getElementById('btnClosePopup').addEventListener('click', () => {
-        const res = sdk.closePopup({ok: true});
-
-        widgetLog('closePopup sent', res);
-    });
 </script>
 </body>
 </html>

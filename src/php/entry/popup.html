@@ -161,10 +161,11 @@
             color: var(--accent-active);
         }
 
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--space-xs);
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            border-color: var(--border);
+            color: var(--muted);
         }
 
         .btn-row {
@@ -177,12 +178,6 @@
             display: grid;
             grid-template-columns: 1fr;
             gap: var(--space-xxs);
-        }
-
-        .panel-divider {
-            height: 1px;
-            background: #d1d6df;
-            margin: var(--space-md) 0;
         }
 
         #log {
@@ -269,7 +264,7 @@
         }
     </style>
     <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk/dist/widget.min.js"></script>
+            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk@1/dist/widget.min.js"></script>
     <script type="text/javascript"
             src="https://apps-api.moysklad.ru/js/ns/appstore/app/v1/moysklad-iframe-expand-3.js"></script>
 </head>
@@ -353,8 +348,6 @@
 
     window.widgetLog = widgetLog;
 
-    const AUTO_OPEN_FEEDBACK_DELAY_MS = 3000;
-
     const sdkNamespace = window.WidgetSDK;
     // Guard against missing SDK script.
     const sdk = sdkNamespace ? sdkNamespace.create({debug: true}) : null;
@@ -383,122 +376,33 @@
         }
     };
 
-    let objectState = {};
+    const sdkControlIds = [
+        'btnSelectFolder',
+        'btnNavigate',
+        'btnDialog',
+        'btnShowPopup',
+        'btnClosePopup',
+    ];
 
-    // Safe shallow-ish equality for diffing; falls back to JSON compare for objects.
-    const valuesEqual = (left, right) => {
-        if (left === right) {
-            return true;
-        }
+    const setSdkControlsEnabled = (enabled) => {
+        sdkControlIds.forEach(id => {
+            const el = document.getElementById(id);
 
-        if (left && right && typeof left === 'object' && typeof right === 'object') {
-            try {
-                return JSON.stringify(left) === JSON.stringify(right);
-            } catch (_) {
-                return false;
-            }
-        }
-
-        return false;
-    };
-
-    // Compute changed keys between two object states.
-    const diffs = (oldState, newState) => {
-        const result = new Map();
-
-        if (!newState || typeof newState !== 'object') {
-            return result;
-        }
-
-        for (const key in newState) {
-            if (Object.prototype.hasOwnProperty.call(newState, key)) {
-                const oldValue = oldState && Object.prototype.hasOwnProperty.call(oldState, key) ? oldState[key] : undefined;
-
-                if (!oldState || !Object.prototype.hasOwnProperty.call(oldState, key)
-                    || !valuesEqual(newState[key], oldValue)) {
-                    result.set(key, newState[key]);
-                }
-            }
-        }
-
-        if (oldState && typeof oldState === 'object') {
-            for (const key in oldState) {
-                if (Object.prototype.hasOwnProperty.call(oldState, key)
-                    && (!newState || !Object.prototype.hasOwnProperty.call(newState, key))) {
-                    result.set(key, '<deleted>');
-                }
-            }
-        }
-
-        return result;
-    };
-
-    // Format diff map for logging.
-    const formatDiffs = (map) => {
-        if (!map || map.size === 0) {
-            return 'objectState: no changes';
-        }
-
-        const lines = [];
-
-        map.forEach((value, key) => {
-            if (value && typeof value === 'object') {
-                lines.push(`${key} = {...}`);
-            } else {
-                lines.push(`${key} = ${value}`);
-            }
-        });
-
-        return `objectState changes:\n${lines.join('\n')}`;
-    };
-
-    if (!sdk) {
-        widgetLog('SDK init skipped', {reason: 'WidgetSDK is not available'});
-    } else {
-        widgetLog('SDK initialized', {debug: true});
-    }
-
-    // Auto-open feedback if the Open event provides a correlation id.
-    const maybeAutoOpenFeedback = (openMessage) => {
-        const resolvedId = openMessage?.messageId;
-
-        if (resolvedId === null || resolvedId === undefined) {
-            widgetLog('auto openFeedback skipped', {reason: 'missing correlationId'});
-
-            return;
-        }
-
-        setTimeout(() => {
-            const res = sdk ? sdk.openFeedback(resolvedId) : null;
-
-            widgetLog('auto openFeedback sent', res);
-        }, AUTO_OPEN_FEEDBACK_DELAY_MS);
-    };
-
-    if (!sdk) {
-        widgetLog('SDK events skipped', {reason: 'WidgetSDK is not available'});
-    } else {
-        sdk.onOpen(message => {
-            widgetLog('Event: Open', message);
-            maybeAutoOpenFeedback(message);
-        });
-        sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));
-        sdk.onChange(message => {
-            widgetLog('Event: Change', message);
-
-            if (!message || !message.objectState) {
-                widgetLog('Change ignored', {reason: 'missing objectState'});
+            if (!el) {
                 return;
             }
 
-            const diffMap = diffs(objectState, message.objectState);
+            el.disabled = !enabled;
 
-            widgetLog('Event: Change (diff)', formatDiffs(diffMap));
-
-            objectState = message.objectState;
+            if (enabled) {
+                el.removeAttribute('title');
+                el.removeAttribute('aria-disabled');
+            } else {
+                el.setAttribute('title', 'SDK недоступен');
+                el.setAttribute('aria-disabled', 'true');
+            }
         });
-        sdk.onSave(message => widgetLog('Event: Save', message));
-    }
+    };
 
     const tabs = Array.from(document.querySelectorAll('.tab'));
     const panels = Array.from(document.querySelectorAll('.tab-panel'));
@@ -519,62 +423,73 @@
         tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
     });
 
-    document.getElementById('btnSelectFolder').addEventListener('click', async () => {
-        try {
-            const res = await sdk.selectGoodFolder();
+    if (!sdk) {
+        widgetLog('SDK init skipped', {reason: 'WidgetSDK is not available'});
+        setSdkControlsEnabled(false);
+    } else {
+        widgetLog('SDK initialized', {debug: true});
+        setSdkControlsEnabled(true);
 
-            widgetLog('selectGoodFolder response', res);
-        } catch (e) {
-            widgetLog('selectGoodFolder error', {message: e.message, name: e.name});
-        }
-    });
+        sdk.onOpen(message => widgetLog('Event: Open', message));
+        sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));
 
-    document.getElementById('btnNavigate').addEventListener('click', async () => {
-        const path = document.getElementById('navigatePath').value.trim() || '/';
+        document.getElementById('btnSelectFolder').addEventListener('click', async () => {
+            try {
+                const res = await sdk.selectGoodFolder();
 
-        try {
-            const res = await sdk.navigateTo(path, 'blank');
+                widgetLog('selectGoodFolder response', res);
+            } catch (e) {
+                widgetLog('selectGoodFolder error', {message: e.message, name: e.name});
+            }
+        });
 
-            widgetLog('navigateTo response', res);
-        } catch (e) {
-            widgetLog('navigateTo error', {message: e.message, name: e.name});
-        }
-    });
+        document.getElementById('btnNavigate').addEventListener('click', async () => {
+            const path = document.getElementById('navigatePath').value.trim() || '/';
 
-    document.getElementById('btnDialog').addEventListener('click', async () => {
-        const text = document.getElementById('dialogText').value.trim() || 'Dialog';
-        const buttonsPayload = parseMaybeJson(document.getElementById('dialogButtons').value);
+            try {
+                const res = await sdk.navigateTo(path, 'blank');
 
-        try {
-            const normalizedButtons = Array.isArray(buttonsPayload)
-                ? buttonsPayload
-                : (buttonsPayload && Array.isArray(buttonsPayload.buttons) ? buttonsPayload.buttons : undefined);
-            const res = await sdk.showDialog(text, normalizedButtons);
+                widgetLog('navigateTo response', res);
+            } catch (e) {
+                widgetLog('navigateTo error', {message: e.message, name: e.name});
+            }
+        });
 
-            widgetLog('showDialog response', res);
-        } catch (e) {
-            widgetLog('showDialog error', {message: e.message, name: e.name});
-        }
-    });
+        document.getElementById('btnDialog').addEventListener('click', async () => {
+            const text = document.getElementById('dialogText').value.trim() || 'Dialog';
+            const buttonsPayload = parseMaybeJson(document.getElementById('dialogButtons').value);
 
-    document.getElementById('btnShowPopup').addEventListener('click', async () => {
-        const name = document.getElementById('popupName').value.trim() || 'popup';
-        const params = parseMaybeJson(document.getElementById('popupParams').value);
+            try {
+                const normalizedButtons = Array.isArray(buttonsPayload)
+                    ? buttonsPayload
+                    : (buttonsPayload && Array.isArray(buttonsPayload.buttons) ? buttonsPayload.buttons : undefined);
+                const res = await sdk.showDialog(text, normalizedButtons);
 
-        try {
-            const res = await sdk.showPopup(name, params);
+                widgetLog('showDialog response', res);
+            } catch (e) {
+                widgetLog('showDialog error', {message: e.message, name: e.name});
+            }
+        });
 
-            widgetLog('showPopup response', res);
-        } catch (e) {
-            widgetLog('showPopup error', {message: e.message, name: e.name});
-        }
-    });
+        document.getElementById('btnShowPopup').addEventListener('click', async () => {
+            const name = document.getElementById('popupName').value.trim() || 'popup';
+            const params = parseMaybeJson(document.getElementById('popupParams').value);
 
-    document.getElementById('btnClosePopup').addEventListener('click', () => {
-        const res = sdk.closePopup({ok: true});
+            try {
+                const res = await sdk.showPopup(name, params);
 
-        widgetLog('closePopup sent', res);
-    });
+                widgetLog('showPopup response', res);
+            } catch (e) {
+                widgetLog('showPopup error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnClosePopup').addEventListener('click', () => {
+            const res = sdk.closePopup({ok: true});
+
+            widgetLog('closePopup sent', res);
+        });
+    }
 </script>
 </body>
 </html>
