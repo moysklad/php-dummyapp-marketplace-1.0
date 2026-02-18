@@ -1,11 +1,13 @@
 <?php
+require_once __DIR__ . '/../lib/lib.php';
 
-$dirRoot = '../';
+$context = require __DIR__ . '/../lib/user-context-loader.inc.php';
 
-require_once '../lib.php';
-require_once '../user-context-loader.inc.php';
+$accountId = $context['accountId'];
+$uid = $context['uid'];
+$fio = $context['fio'];
 
 // В демо отсутствует авторизация между виджетом и бэкендом (передаем accountId напрямую параметром) - в реальных решениях НИ В КОЕМ СЛУЧАЕ НЕ ДЕЛАЙТЕ ТАК (должна быть авторизация)!!!
-$getObjectUrl = cfg()->appBaseUrl . "/widgets/get-object.php?accountId=$accountId&entity=$entity&objectId=";
+$getObjectUrl = "/utils/get-object.php?accountId=$accountId&entity=$entity&objectId=";
 
-require 'widget.html.php';
+require __DIR__ . '/widget.html.php';

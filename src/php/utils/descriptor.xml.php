@@ -2,48 +2,64 @@
                    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                    xsi:schemaLocation="https://apps-api.moysklad.ru/xml/ns/appstore/app/v2 https://apps-api.moysklad.ru/xml/ns/appstore/app/v2/application-v2.xsd">
     <iframe>
-        <sourceUrl><?=cfg()->appBaseUrl?>/iframe.php</sourceUrl>
+        <sourceUrl><?= cfg()->appBaseUrl ?>/entry/iframe.php</sourceUrl>
+        <expand>true</expand>
     </iframe>
     <vendorApi>
-        <endpointBase><?=cfg()->appBaseUrl?>/vendor-endpoint.php</endpointBase>
+        <endpointBase><?= cfg()->appBaseUrl ?>/api/vendor-endpoint.php</endpointBase>
     </vendorApi>
     <access>
-        <resource><?=cfg()->moyskladJsonApiEndpointUrl?></resource>
+        <resource><?= cfg()->moyskladJsonApiEndpointUrl ?></resource>
         <scope>admin</scope>
     </access>
     <widgets>
-        <entity.counterparty.edit>
-            <sourceUrl><?=cfg()->appBaseUrl?>/widgets/counterparty-widget.php</sourceUrl>
-            <height>
-                <fixed>250px</fixed>
-            </height>
-            <supports>
-                <open-feedback/>
-            </supports>
-        </entity.counterparty.edit>
         <document.customerorder.edit>
-            <sourceUrl><?=cfg()->appBaseUrl?>/widgets/customerorder-widget.php</sourceUrl>
-            <height>
-                <fixed>250px</fixed>
-            </height>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget-customerorder.php</sourceUrl>
             <supports>
                 <open-feedback/>
+                <dirty-state/>
+                <save-handler/>
+                <update-provider/>
+                <change-handler>
+                    <validation-feedback/>
+                </change-handler>
             </supports>
+            <uses>
+                <good-folder-selector/>
+                <standard-dialogs/>
+                <navigation-service/>
+            </uses>
         </document.customerorder.edit>
-        <document.demand.edit>
-            <sourceUrl><?=cfg()->appBaseUrl?>/widgets/demand-widget.php</sourceUrl>
+        <document.invoiceout.edit>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget-invoiceout.php</sourceUrl>
             <height>
-                <fixed>250px</fixed>
+                <fixed>525px</fixed>
             </height>
             <supports>
                 <open-feedback/>
+                <dirty-state/>
+                <save-handler/>
+                <update-provider/>
+                <change-handler>
+                    <validation-feedback/>
+                </change-handler>
             </supports>
-        </document.demand.edit>
+            <uses>
+                <good-folder-selector/>
+                <standard-dialogs/>
+                <navigation-service/>
+            </uses>
+        </document.invoiceout.edit>
     </widgets>
     <popups>
         <popup>
             <name>some-popup</name>
-            <sourceUrl><?=cfg()->appBaseUrl?>/widgets/popup.php</sourceUrl>
+            <sourceUrl><?= cfg()->appBaseUrl ?>/entry/popup.php</sourceUrl>
+            <uses>
+                <good-folder-selector/>
+                <standard-dialogs/>
+                <navigation-service/>
+            </uses>
         </popup>
     </popups>
     <buttons>

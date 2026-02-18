@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PHP Demo App popup</title>
+    <style>
+        :root {
+            --page-bg: #f7f7f7;
+            --panel-bg: #ffffff;
+            --muted: #5f6d79;
+            --text: #091739;
+            --border: #bfbfbf;
+            --surface: #ffffff;
+            --accent: #036ce5;
+            --accent-hover: #0b7cff;
+            --accent-active: #2f8fff;
+            --radius-lg: 10px;
+            --radius-md: 8px;
+            --radius-sm: 7px;
+            --space-xxs: 6px;
+            --space-xs: 8px;
+            --space-sm: 10px;
+            --space-md: 12px;
+            --space-lg: 14px;
+            --space-xl: 16px;
+            --space-xxl: 24px;
+            --font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            --font-size: 14px;
+            --line-height: 1.45;
+            --font-size-sm: 12px;
+            --font-size-lg: 13px;
+            --letter-spacing-wide: 0.08em;
+            --letter-spacing-tight: 0.02em;
+            --log-height: 250px;
+            --popup-left-min: 320px;
+            --popup-left-max: 420px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            background: var(--page-bg);
+            color: var(--text);
+            font: var(--font-size)/var(--line-height) var(--font-family);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: minmax(var(--popup-left-min), var(--popup-left-max)) 1fr;
+            gap: var(--space-xl);
+            padding: var(--space-md);
+            align-items: stretch;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border-radius: var(--radius-lg);
+            padding: var(--space-lg);
+        }
+
+        .panel.settings {
+            flex: 0 0 300px;
+            overflow: auto;
+        }
+
+        .panel.logs {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .panel h2 {
+            margin: 0 0 10px;
+            font-size: var(--font-size-lg);
+            text-transform: uppercase;
+            letter-spacing: var(--letter-spacing-wide);
+            color: var(--text);
+        }
+
+        .row {
+            display: grid;
+            gap: var(--space-xs);
+            margin-bottom: var(--space-sm);
+        }
+
+        label {
+            font-size: var(--font-size-sm);
+            color: var(--muted);
+            line-height: 1.3;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text);
+        }
+
+        input:hover,
+        textarea:hover,
+        select:hover {
+            border-color: #000;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+        }
+
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            border-color: #000;
+        }
+
+        textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--space-xs);
+            padding: var(--space-xs) var(--space-sm);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--accent);
+            background: var(--panel-bg);
+            color: var(--accent);
+            cursor: pointer;
+            transition: transform 0.05s ease, border-color 0.2s ease;
+        }
+
+        .btn:hover {
+            border-color: var(--accent-hover);
+            color: var(--accent-hover);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+            border-color: var(--accent-active);
+            color: var(--accent-active);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+            border-color: var(--border);
+            color: var(--muted);
+        }
+
+        .btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-xs);
+        }
+
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: var(--space-xxs);
+        }
+
+        #log {
+            flex: 1 1 auto;
+            min-height: 0;
+            height: auto;
+            overflow: auto;
+            font-size: var(--font-size-sm);
+            background: var(--panel-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--space-sm);
+            white-space: pre-wrap;
+        }
+
+        .tabs {
+            display: flex;
+            gap: var(--space-xxs);
+            flex-wrap: wrap;
+            margin-bottom: var(--space-xxl);
+        }
+
+        .tab {
+            padding: var(--space-xxs) 0 var(--space-sm) 0;
+            margin-right: var(--space-sm);
+            border: none;
+            border-bottom: 1px solid transparent;
+            background: transparent;
+            color: var(--text);
+            cursor: pointer;
+            font-size: var(--font-size);
+            letter-spacing: var(--letter-spacing-tight);
+        }
+
+        .tab.active {
+            border-bottom-color: var(--accent);
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        @media (max-width: 980px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 420px) {
+            main {
+                padding: 10px 12px 16px;
+                gap: var(--space-md);
+            }
+
+            .panel {
+                padding: var(--space-md);
+                border-radius: var(--radius-md);
+            }
+
+            .btn-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            input, textarea, select {
+                padding: 7px 9px;
+                border-radius: var(--radius-sm);
+            }
+
+            textarea {
+                min-height: 76px;
+            }
+
+            #log {
+                font-size: 11px;
+            }
+        }
+    </style>
+    <script type="text/javascript"
+            src="https://cdn.jsdelivr.net/npm/@moysklad-official/js-widget-sdk@1/dist/widget.min.js"></script>
+    <script type="text/javascript"
+            src="https://apps-api.moysklad.ru/js/ns/appstore/app/v1/moysklad-iframe-expand-3.js"></script>
+</head>
+<body>
+<main>
+    <section class="panel settings">
+        <div class="tabs" role="tablist" aria-label="SDK sections">
+            <button class="tab active" data-tab="good-folder" role="tab" aria-selected="true">Выбор группы товаров
+            </button>
+            <button class="tab" data-tab="navigation" role="tab" aria-selected="false">Навигация</button>
+            <button class="tab" data-tab="dialogs" role="tab" aria-selected="false">Диалог</button>
+            <button class="tab" data-tab="popups" role="tab" aria-selected="false">Попап</button>
+        </div>
+        <div class="tab-panel active" data-tab-panel="good-folder" role="tabpanel">
+            <h2>good-folder-selector</h2>
+            <div class="row">
+                <button class="btn" id="btnSelectFolder">Выбрать</button>
+            </div>
+        </div>
+        <div class="tab-panel" data-tab-panel="navigation" role="tabpanel">
+            <h2>navigation-service</h2>
+            <div class="row field-row">
+                <label for="navigatePath">Путь</label>
+                <input id="navigatePath" value="#customerorder?sort=o.moment%20d">
+            </div>
+            <div class="row">
+                <button class="btn" id="btnNavigate">Перейти</button>
+            </div>
+        </div>
+        <div class="tab-panel" data-tab-panel="dialogs" role="tabpanel">
+            <h2>standard-dialogs</h2>
+            <div class="row field-row">
+                <label for="dialogText">Текст диалога</label>
+                <input id="dialogText" value="Hello from SDK">
+            </div>
+            <div class="row field-row">
+                <label for="dialogButtons">Кнопки диалога (JSON)</label>
+                <textarea
+                    id="dialogButtons">[{ "name": "Yes", "caption": "Да, удалить" },{ "name": "No", "caption": "Нет" }]</textarea>
+            </div>
+            <div class="row">
+                <button class="btn" id="btnDialog">Открыть</button>
+            </div>
+        </div>
+        <div class="tab-panel" data-tab-panel="popups" role="tabpanel">
+            <h2>Popups</h2>
+            <div class="row field-row">
+                <label for="popupName">Название попапа</label>
+                <input id="popupName" value="some-popup">
+            </div>
+            <div class="row field-row">
+                <label for="popupParams">Параметры попапа (JSON)</label>
+                <textarea id="popupParams">{ "foo": "bar" }</textarea>
+            </div>
+            <div class="row btn-row">
+                <button class="btn" id="btnShowPopup">Открыть</button>
+                <button class="btn" id="btnClosePopup">Закрыть</button>
+            </div>
+        </div>
+    </section>
+    <section class="panel logs">
+        <h2>Логи</h2>
+        <div id="log"></div>
+    </section>
+</main>
+<script>
+    const logEl = document.getElementById('log');
+
+    // Log to UI panel when present, fall back to console otherwise.
+    const widgetLog = (label, payload) => {
+        const ts = new Date().toISOString().replace('T', ' ').replace('Z', '');
+        const data = payload ? JSON.stringify(payload, null, 2) : '';
+        const message = `[${ts}] ${label}\n${data}\n\n`;
+
+        if (logEl) {
+            logEl.textContent = message + logEl.textContent;
+        } else {
+            console.log(message);
+        }
+    };
+
+    window.widgetLog = widgetLog;
+
+    const sdkNamespace = window.WidgetSDK;
+    // Guard against missing SDK script.
+    const sdk = sdkNamespace ? sdkNamespace.create({debug: true}) : null;
+
+    if (sdk) {
+        // Expose for easier debugging in the console.
+        window.widgetSdk = sdk;
+    }
+
+    // Parse JSON when possible, otherwise return a trimmed string.
+    const parseMaybeJson = (value) => {
+        if (value === undefined || value === null) {
+            return undefined;
+        }
+
+        const trimmed = String(value).trim();
+
+        if (!trimmed) {
+            return undefined;
+        }
+
+        try {
+            return JSON.parse(trimmed);
+        } catch (_) {
+            return trimmed;
+        }
+    };
+
+    const sdkControlIds = [
+        'btnSelectFolder',
+        'btnNavigate',
+        'btnDialog',
+        'btnShowPopup',
+        'btnClosePopup',
+    ];
+
+    const setSdkControlsEnabled = (enabled) => {
+        sdkControlIds.forEach(id => {
+            const el = document.getElementById(id);
+
+            if (!el) {
+                return;
+            }
+
+            el.disabled = !enabled;
+
+            if (enabled) {
+                el.removeAttribute('title');
+                el.removeAttribute('aria-disabled');
+            } else {
+                el.setAttribute('title', 'SDK недоступен');
+                el.setAttribute('aria-disabled', 'true');
+            }
+        });
+    };
+
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const panels = Array.from(document.querySelectorAll('.tab-panel'));
+
+    const setActiveTab = (tabId) => {
+        tabs.forEach(tab => {
+            const isActive = tab.dataset.tab === tabId;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        });
+        panels.forEach(panel => {
+            const isActive = panel.dataset.tabPanel === tabId;
+            panel.classList.toggle('active', isActive);
+        });
+    };
+
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => setActiveTab(tab.dataset.tab));
+    });
+
+    if (!sdk) {
+        widgetLog('SDK init skipped', {reason: 'WidgetSDK is not available'});
+        setSdkControlsEnabled(false);
+    } else {
+        widgetLog('SDK initialized', {debug: true});
+        setSdkControlsEnabled(true);
+
+        sdk.onOpen(message => widgetLog('Event: Open', message));
+        sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));
+
+        document.getElementById('btnSelectFolder').addEventListener('click', async () => {
+            try {
+                const res = await sdk.selectGoodFolder();
+
+                widgetLog('selectGoodFolder response', res);
+            } catch (e) {
+                widgetLog('selectGoodFolder error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnNavigate').addEventListener('click', async () => {
+            const path = document.getElementById('navigatePath').value.trim() || '/';
+
+            try {
+                const res = await sdk.navigateTo(path, 'blank');
+
+                widgetLog('navigateTo response', res);
+            } catch (e) {
+                widgetLog('navigateTo error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnDialog').addEventListener('click', async () => {
+            const text = document.getElementById('dialogText').value.trim() || 'Dialog';
+            const buttonsPayload = parseMaybeJson(document.getElementById('dialogButtons').value);
+
+            try {
+                const normalizedButtons = Array.isArray(buttonsPayload)
+                    ? buttonsPayload
+                    : (buttonsPayload && Array.isArray(buttonsPayload.buttons) ? buttonsPayload.buttons : undefined);
+                const res = await sdk.showDialog(text, normalizedButtons);
+
+                widgetLog('showDialog response', res);
+            } catch (e) {
+                widgetLog('showDialog error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnShowPopup').addEventListener('click', async () => {
+            const name = document.getElementById('popupName').value.trim() || 'popup';
+            const params = parseMaybeJson(document.getElementById('popupParams').value);
+
+            try {
+                const res = await sdk.showPopup(name, params);
+
+                widgetLog('showPopup response', res);
+            } catch (e) {
+                widgetLog('showPopup error', {message: e.message, name: e.name});
+            }
+        });
+
+        document.getElementById('btnClosePopup').addEventListener('click', () => {
+            const res = sdk.closePopup({ok: true});
+
+            widgetLog('closePopup sent', res);
+        });
+    }
+</script>
+</body>
+</html>

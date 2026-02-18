@@ -1,8 +1,8 @@
 <?php
 
-require_once 'lib.php';
+require_once __DIR__ . '/../lib/lib.php';
 
-function processDocumentButtonClick(string $buttonName, string $extensionPoint, string $objectId, $user)
+function processDocumentButtonClick(string $buttonName, string $extensionPoint, string $objectId, $user): array
 {
     if ($buttonName == 'show-notification') {
         return [
@@ -27,13 +27,15 @@ function processDocumentButtonClick(string $buttonName, string $extensionPoint, 
             ]
         ];
     }
+
     return [];
 }
 
-function processListButtonClick(string $buttonName, string $extensionPoint, $objects, $user)
+function processListButtonClick(string $buttonName, string $extensionPoint, $objects): array
 {
     if ($buttonName == 'show-notification') {
         $items = '';
+
         foreach ($objects as $item) {
             $items .= "'$item->id', ";
         }
@@ -45,5 +47,6 @@ function processListButtonClick(string $buttonName, string $extensionPoint, $obj
             ]
         ];
     }
+
     return [];
 }

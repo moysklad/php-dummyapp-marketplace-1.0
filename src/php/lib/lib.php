@@ -2,11 +2,7 @@
 
 use \Firebase\JWT\JWT;
 
-require_once 'jwt.lib.php';
-
-if (!isset($dirRoot)) {
-    $dirRoot = '';
-}
+require_once __DIR__ . '/jwt.lib.php';
 
 //
 //  Config
@@ -30,7 +26,12 @@ class AppConfig
     }
 }
 
-$cfg = new AppConfig(require('config.php'));
+$cfg = new AppConfig(require(__DIR__ . '/../config.php'));
+
+function dataDir(): string
+{
+    return __DIR__ . '/../data';
+}
 
 function cfg(): AppConfig
 {
@@ -66,14 +67,17 @@ class VendorApi
     }
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null) {
+function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null)
+{
     $curl = curl_init($url);
 
     $headers = array('Authorization: Bearer ' . $bearerToken, 'Accept-Encoding: gzip');
+
     if ($data) {
         $headers[] = 'Content-type: application/json';
     }
-    log_message('DEBUG', "Request: $method $url" .print_r($headers, true) . print_r($data, true));
+
+    log_message('DEBUG', "Request: $method $url" . print_r($headers, true) . print_r($data, true));
 
     $options = [
         CURLOPT_RETURNTRANSFER => true,
@@ -97,15 +101,19 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $data
     $response = curl_exec($curl);
     $error = curl_error($curl);
     $info = curl_getinfo($curl);
+
     curl_close($curl);
 
     if ($error) {
         log_message('ERROR', "Response error: $error");
+
         return null;
     } else {
         $headerSize = $info['header_size'];
         $body = substr($response, $headerSize);
+
         log_message('DEBUG', "Response: $method $url\n$response");
+
         return json_decode($body);
     }
 }
@@ -117,7 +125,7 @@ function vendorApi(): VendorApi
     return $GLOBALS['vendorApi'];
 }
 
-function buildJWT()
+function buildJWT(): string
 {
     $token = array(
         "sub" => cfg()->appUid,
@@ -125,6 +133,7 @@ function buildJWT()
         "exp" => time() + 300,
         "jti" => bin2hex(random_bytes(32))
     );
+
     return JWT::encode($token, cfg()->secretKey);
 }
 
@@ -165,6 +174,7 @@ function jsonApi(): JsonApi
     if (empty($GLOBALS['jsonApi'])) {
         $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
     }
+
     return $GLOBALS['jsonApi'];
 }
 
@@ -219,9 +229,11 @@ class AppInstance
     static function get(): AppInstance
     {
         $app = $GLOBALS['currentAppInstance'];
+
         if (!$app) {
             throw new InvalidArgumentException("There is no current app instance context");
         }
+
         return $app;
     }
 
@@ -239,12 +251,13 @@ class AppInstance
             case self::ACTIVATED:
                 return 'Activated';
         }
+
         return null;
     }
 
     function persist()
     {
-        @mkdir('data');
+        @mkdir(dataDir());
         file_put_contents($this->filename(), serialize($this));
     }
 
@@ -260,7 +273,7 @@ class AppInstance
 
     private static function buildFilename($appId, $accountId)
     {
-        return $GLOBALS['dirRoot'] . "data/$appId.$accountId.app";
+        return dataDir() . "/$appId.$accountId.app";
     }
 
     static function loadApp($accountId): AppInstance
@@ -271,13 +284,15 @@ class AppInstance
     static function load($appId, $accountId): AppInstance
     {
         $data = @file_get_contents(self::buildFilename($appId, $accountId));
+
         if ($data === false) {
             $app = new AppInstance($appId, $accountId);
         } else {
             $app = unserialize($data);
         }
+
         $GLOBALS['currentAppInstance'] = $app;
+
         return $app;
     }
-
 }

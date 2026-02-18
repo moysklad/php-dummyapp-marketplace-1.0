@@ -1,22 +1,23 @@
 <?php
+require_once __DIR__ . '/../lib/lib.php';
 
-require_once 'lib.php';
+$context = require __DIR__ . '/../lib/user-context-loader.inc.php';
 
 $contextName = 'IFRAME';
-require_once 'user-context-loader.inc.php';
 
-$app = AppInstance::loadApp($accountId);
+$app = AppInstance::loadApp($context['accountId']);
+
 $infoMessage = $app->infoMessage;
 $store = $app->store;
-
 $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
+$storesValues = [];
 
-if ($isAdmin) {
+if ($context['isAdmin']) {
     $stores = jsonApi()->stores();
-    $storesValues = [];
+
     foreach ($stores->rows as $v) {
         $storesValues[] = $v->name;
     }
 }
 
-require 'iframe.html.php';
+require __DIR__ . '/iframe.inc.php';

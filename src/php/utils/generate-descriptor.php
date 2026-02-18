@@ -2,7 +2,5 @@
 
 header('Content-Type: text/xml; charset=UTF-8');
 
-require_once '../lib.php';
-
-require_once 'descriptor.xml.php';
-
+require_once __DIR__ . '/../lib/lib.php';
+require_once __DIR__ . '/descriptor.xml.php';
