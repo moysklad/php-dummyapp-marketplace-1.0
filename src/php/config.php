@@ -14,6 +14,6 @@ const LOG_LEVEL = 'DEBUG';
 return [
     'appId' => '195d5446-9da8-47ee-abb9-e808e4f283d7',
     'appUid' => 'php-demo-app.moysklad',
-    'appBaseUrl' => 'http://php-demo-app:80',
+    'appBaseUrl' => 'http://php-demo-app',
     'secretKey' => 'nAbioPF2HAuYvrYpOikD3LYnNTzkYGugXqRT74hUGD47BeLEY7Zo7rHM4EK0wcj4oSAycrDpbVYhO44XdmKYtTEKzepbO4g6LzfYfU7c1ILRTfcGJOPpJTMkV8mwltJx'
 ];

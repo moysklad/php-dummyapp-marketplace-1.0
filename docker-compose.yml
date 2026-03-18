@@ -1,0 +1,13 @@
+version: '3'
+services:
+  php-demo-app:
+    image: alekseizuby/php-demo-app:1.0
+    ports:
+      - "8085:80"
+    networks:
+      - moysklad-all_default
+    container_name: php-demo-app
+
+networks:
+  moysklad-all_default:
+    external: true
