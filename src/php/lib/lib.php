@@ -15,8 +15,9 @@ class AppConfig
     var $secretKey = '';
     var $appBaseUrl = '';
 
-    var $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
-    var $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
+    var $moyskladVendorApiEndpointUrl = 'http://zeus:8080/api/vendor/1.0';
+    var $moyskladJsonApiEndpointUrl = 'http://remap-12:8080/api/remap/1.2';
+
 
     public function __construct(array $cfg)
     {
