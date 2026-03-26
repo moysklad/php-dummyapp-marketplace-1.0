@@ -9,12 +9,15 @@
         <endpointBase><?= cfg()->appBaseUrl ?>/api/vendor-endpoint.php</endpointBase>
     </vendorApi>
     <access>
-        <resource><?= cfg()->moyskladJsonApiEndpointUrl ?></resource>
+        <resource>https://api.moysklad.ru/api/remap/1.2</resource>
         <scope>admin</scope>
     </access>
     <widgets>
         <document.customerorder.edit>
             <sourceUrl><?= cfg()->appBaseUrl ?>/entry/widget-customerorder.php</sourceUrl>
+            <height>
+                <fixed>525px</fixed>
+            </height>
             <supports>
                 <open-feedback/>
                 <dirty-state/>
