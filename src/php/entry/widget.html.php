@@ -264,6 +264,21 @@
         </h2>
         <div><?= $uid ?> (<?= $fio ?>)</div>
         <div class="panel-divider"></div>
+        <h2 title="Пример хранения пользовательского контекста, полученного по contextKey, в PHP-сессии">
+            contextKey и сессия <span class="hint">(?)</span>
+        </h2>
+        <div>contextKey: <code><?= $contextKey ?></code></div>
+        <div>Источник: <?= $contextSource ?></div>
+        <div>Session ID: <code><?= $sessionId ?></code></div>
+        <?php if (!empty($contextHistory)) { ?>
+            <div class="muted">История в сессии:</div>
+            <ul>
+                <?php foreach ($contextHistory as $historyItem) { ?>
+                    <li><?= $historyItem['uid'] ?? 'unknown' ?> @ <?= $historyItem['accountId'] ?? 'unknown' ?></li>
+                <?php } ?>
+            </ul>
+        <?php } ?>
+        <div class="panel-divider"></div>
         <h2 title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">
             Открытый объект <span class="hint">(?)</span>
         </h2>
@@ -359,6 +374,7 @@
     window.widgetLog = widgetLog;
 
     const getObjectUrl = <?= json_encode($getObjectUrl ?? '') ?>;
+    const contextToken = <?= json_encode($contextToken ?? '') ?>;
     const objectEl = document.getElementById('object');
 
     const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
@@ -514,15 +530,29 @@
             widgetLog('Event: Open', message);
             maybeAutoOpenFeedback(message);
 
-            if (objectEl && getObjectUrl && message && message.objectId) {
-                fetch(`${getObjectUrl}${message.objectId}`)
-                    .then(response => response.text())
+            if (objectEl && getObjectUrl && contextToken && message && message.objectId) {
+                fetch(`${getObjectUrl}${message.objectId}`, {
+                    headers: {
+                        Authorization: `Bearer ${contextToken}`
+                    }
+                })
+                    .then(async response => {
+                        const text = await response.text();
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${text}`);
+                        }
+
+                        return text;
+                    })
                     .then(text => {
                         objectEl.textContent = text;
                     })
                     .catch(error => {
                         widgetLog('object fetch error', {message: error.message || String(error)});
                     });
+            } else if (!contextToken) {
+                widgetLog('object fetch skipped', {reason: 'missing context token'});
             }
         });
         sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));

@@ -269,6 +269,25 @@
             </li>
         </ul>
         <div class="panel-divider"></div>
+        <h2>contextKey и сессия</h2>
+        <ul class="info-list">
+            <li>contextKey: <code><?= $contextKey ?></code></li>
+            <li>Источник контекста: <b><?= $contextSource ?></b></li>
+            <li>Session ID: <code><?= $sessionId ?></code></li>
+        </ul>
+        <?php if (!empty($contextHistory)) { ?>
+            <p class="muted">Последние контексты в сессии:</p>
+            <ul class="info-list">
+                <?php foreach ($contextHistory as $historyItem) { ?>
+                    <li>
+                        <?= $historyItem['fio'] ?? 'unknown' ?> (<?= $historyItem['uid'] ?? 'unknown' ?>),
+                        accountId: <?= $historyItem['accountId'] ?? 'unknown' ?>,
+                        <?= !empty($historyItem['savedAt']) ? date('H:i:s', (int)$historyItem['savedAt']) : 'n/a' ?>
+                    </li>
+                <?php } ?>
+            </ul>
+        <?php } ?>
+        <div class="panel-divider"></div>
         <h2>Состояние решения</h2>
         <div class="status-box <?= $isSettingsRequired ? 'status-required' : 'status-ready' ?>">
             <div class="status-title">
@@ -298,7 +317,7 @@
                         <?php } ?>
                     </select>
                 </div>
-                <input type="hidden" name="accountId" value="<?= $accountId ?>"/>
+                <input type="hidden" name="contextToken" value="<?= htmlspecialchars($contextToken, ENT_QUOTES, 'UTF-8') ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
         <?php } else { ?>

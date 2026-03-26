@@ -1,13 +1,21 @@
 <?php
-require_once __DIR__ . '/../lib/lib.php';
+if (!defined('WIDGET_ENTRY')) {
+    http_response_code(403);
+    exit('Forbidden');
+}
 
-$context = require __DIR__ . '/../lib/user-context-loader.inc.php';
-
-$accountId = $context['accountId'];
 $uid = $context['uid'];
 $fio = $context['fio'];
+$contextKey = $context['contextKey'] ?? '';
+$sessionId = $context['sessionId'] ?? '';
+$contextHistory = $context['contextHistory'] ?? [];
+$contextSourceNames = [
+    'vendor-api' => 'Vendor API (по contextKey)',
+    'session' => 'PHP сессия (кэш по contextKey)',
+];
+$contextSource = $contextSourceNames[$context['contextSource']] ?? ($context['contextSource'] ?? 'unknown');
+$contextToken = buildBackendContextToken($context);
 
-// В демо отсутствует авторизация между виджетом и бэкендом (передаем accountId напрямую параметром) - в реальных решениях НИ В КОЕМ СЛУЧАЕ НЕ ДЕЛАЙТЕ ТАК (должна быть авторизация)!!!
-$getObjectUrl = "/utils/get-object.php?accountId=$accountId&entity=$entity&objectId=";
+$getObjectUrl = "/utils/get-object.php?entity=$entity&objectId=";
 
 require __DIR__ . '/widget.html.php';

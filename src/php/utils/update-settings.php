@@ -2,12 +2,24 @@
 
 require_once __DIR__ . '/../lib/lib.php';
 
-$infoMessage = $_POST['infoMessage'];
-$store = $_POST['store'];
+$authContext = resolveBackendContextFromRequest();
+
+if (!$authContext) {
+    http_response_code(401);
+    exit('Некорректный токен контекста');
+}
+
+if (empty($authContext['isAdmin'])) {
+    http_response_code(403);
+    exit('Недостаточно прав');
+}
+
+$infoMessage = trim((string)($_POST['infoMessage'] ?? ''));
+$store = trim((string)($_POST['store'] ?? ''));
 
 log_message('INFO', "Update settings: $infoMessage, store: $store");
 
-$accountId = $_POST['accountId'];
+$accountId = $authContext['accountId'];
 
 $app = AppInstance::loadApp($accountId);
 $app->infoMessage = $infoMessage;
