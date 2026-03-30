@@ -42,6 +42,11 @@ function cfg(): AppConfig
     return $GLOBALS['cfg'];
 }
 
+function escHtml($value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
 //
 //  Session-based user context storage
 //  DEMO ONLY: serves as an example for contextKey/session flow.
@@ -50,6 +55,7 @@ function cfg(): AppConfig
 
 const USER_CONTEXT_SESSION_KEY = 'userContext';
 const USER_CONTEXT_HISTORY_LIMIT = 10;
+const CONTEXT_KEY_TTL_SECONDS = 300;
 const BACKEND_CONTEXT_TOKEN_TTL_SECONDS = 900;
 const BACKEND_CONTEXT_TOKEN_AUDIENCE = 'php-demo-backend';
 const BACKEND_CONTEXT_TOKEN_PURPOSE = 'backend-context';
@@ -164,6 +170,24 @@ function buildSessionContextMeta(int $historyLimit = 5): array
     ];
 }
 
+function formatContextSavedAtForUi($savedAt): string
+{
+    if (empty($savedAt)) {
+        return 'n/a';
+    }
+
+    $savedAtTs = (int)$savedAt;
+    $elapsedSeconds = max(0, time() - $savedAtTs);
+    $elapsedMinutes = (int)floor($elapsedSeconds / 60);
+    $ttlMinutes = (int)ceil(CONTEXT_KEY_TTL_SECONDS / 60);
+
+    if ($elapsedMinutes <= 0) {
+        return "меньше 1 мин назад (TTL contextKey ~{$ttlMinutes} мин)";
+    }
+
+    return "{$elapsedMinutes} мин назад (TTL contextKey ~{$ttlMinutes} мин)";
+}
+
 function buildBackendContextToken(array $context): string
 {
     $accountId = trim((string)($context['accountId'] ?? ''));
@@ -257,6 +281,7 @@ function getBackendContextTokenFromRequest(): ?string
         return $tokenFromHeader;
     }
 
+    // Fallback для POST-форм и ручной отладки в браузере без Authorization header.
     $token = $_POST['contextToken'] ?? $_GET['contextToken'] ?? null;
 
     if ($token === null) {

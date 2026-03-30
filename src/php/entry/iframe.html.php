@@ -263,26 +263,26 @@
     <section class="panel">
         <h2>Информация о пользователе</h2>
         <ul class="info-list">
-            <li>Текущий пользователь: <?= $uid ?> (<?= $fio ?>)</li>
-            <li>Идентификатор аккаунта: <?= $accountId ?></li>
+            <li>Текущий пользователь: <?= escHtml($uid) ?> (<?= escHtml($fio) ?>)</li>
+            <li>Идентификатор аккаунта: <?= escHtml($accountId) ?></li>
             <li>Уровень доступа: <b><?= $isAdmin ? 'администратор аккаунта' : 'простой пользователь' ?></b>
             </li>
         </ul>
         <div class="panel-divider"></div>
         <h2>contextKey и сессия</h2>
         <ul class="info-list">
-            <li>contextKey: <code><?= $contextKey ?></code></li>
-            <li>Источник контекста: <b><?= $contextSource ?></b></li>
-            <li>Session ID: <code><?= $sessionId ?></code></li>
+            <li>contextKey: <code><?= escHtml($contextKey) ?></code></li>
+            <li>Источник контекста: <b><?= escHtml($contextSource) ?></b></li>
+            <li>Session ID: <code><?= escHtml($sessionId) ?></code></li>
         </ul>
         <?php if (!empty($contextHistory)) { ?>
             <p class="muted">Последние контексты в сессии:</p>
             <ul class="info-list">
                 <?php foreach ($contextHistory as $historyItem) { ?>
                     <li>
-                        <?= $historyItem['fio'] ?? 'unknown' ?> (<?= $historyItem['uid'] ?? 'unknown' ?>),
-                        accountId: <?= $historyItem['accountId'] ?? 'unknown' ?>,
-                        <?= !empty($historyItem['savedAt']) ? date('H:i:s', (int)$historyItem['savedAt']) : 'n/a' ?>
+                        <?= escHtml($historyItem['fio'] ?? 'unknown') ?> (<?= escHtml($historyItem['uid'] ?? 'unknown') ?>),
+                        accountId: <?= escHtml($historyItem['accountId'] ?? 'unknown') ?>,
+                        <?= escHtml(formatContextSavedAtForUi($historyItem['savedAt'] ?? null)) ?>
                     </li>
                 <?php } ?>
             </ul>
@@ -295,8 +295,8 @@
             </div>
             <?php if (!$isSettingsRequired) { ?>
                 <p>
-                    Сообщение: <?= $infoMessage ?><br>
-                    Выбран склад: <?= $store ?>
+                    Сообщение: <?= escHtml($infoMessage) ?><br>
+                    Выбран склад: <?= escHtml($store) ?>
                 </p>
             <?php } ?>
         </div>
@@ -313,11 +313,11 @@
                     <label for="store">Выберите склад</label>
                     <select id="store" name="store">
                         <?php foreach ($storesValues as $v) { ?>
-                            <option value="<?= $v ?>"><?= $v ?></option>
+                            <option value="<?= escHtml($v) ?>"><?= escHtml($v) ?></option>
                         <?php } ?>
                     </select>
                 </div>
-                <input type="hidden" name="contextToken" value="<?= htmlspecialchars($contextToken, ENT_QUOTES, 'UTF-8') ?>"/>
+                <input type="hidden" name="contextToken" value="<?= escHtml($contextToken) ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
         <?php } else { ?>

@@ -262,19 +262,22 @@
         <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API, используя contextKey">
             Текущий пользователь <span class="hint">(?)</span>
         </h2>
-        <div><?= $uid ?> (<?= $fio ?>)</div>
+        <div><?= escHtml($uid) ?> (<?= escHtml($fio) ?>)</div>
         <div class="panel-divider"></div>
         <h2 title="Пример хранения пользовательского контекста, полученного по contextKey, в PHP-сессии">
             contextKey и сессия <span class="hint">(?)</span>
         </h2>
-        <div>contextKey: <code><?= $contextKey ?></code></div>
-        <div>Источник: <?= $contextSource ?></div>
-        <div>Session ID: <code><?= $sessionId ?></code></div>
+        <div>contextKey: <code><?= escHtml($contextKey) ?></code></div>
+        <div>Источник: <?= escHtml($contextSource) ?></div>
+        <div>Session ID: <code><?= escHtml($sessionId) ?></code></div>
         <?php if (!empty($contextHistory)) { ?>
             <div class="muted">История в сессии:</div>
             <ul>
                 <?php foreach ($contextHistory as $historyItem) { ?>
-                    <li><?= $historyItem['uid'] ?? 'unknown' ?> @ <?= $historyItem['accountId'] ?? 'unknown' ?></li>
+                    <li>
+                        <?= escHtml($historyItem['uid'] ?? 'unknown') ?> @ <?= escHtml($historyItem['accountId'] ?? 'unknown') ?>,
+                        <?= escHtml(formatContextSavedAtForUi($historyItem['savedAt'] ?? null)) ?>
+                    </li>
                 <?php } ?>
             </ul>
         <?php } ?>
