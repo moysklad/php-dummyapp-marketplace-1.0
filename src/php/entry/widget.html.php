@@ -259,28 +259,10 @@
 <body>
 <main>
     <section class="panel settings">
-        <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API, используя contextKey">
+        <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API">
             Текущий пользователь <span class="hint">(?)</span>
         </h2>
         <div><?= escHtml($uid) ?> (<?= escHtml($fio) ?>)</div>
-        <div class="panel-divider"></div>
-        <h2 title="Пример хранения пользовательского контекста, полученного по contextKey, в PHP-сессии">
-            contextKey и сессия <span class="hint">(?)</span>
-        </h2>
-        <div>contextKey: <code><?= escHtml($contextKey) ?></code></div>
-        <div>Источник: <?= escHtml($contextSource) ?></div>
-        <div>Session ID: <code><?= escHtml($sessionId) ?></code></div>
-        <?php if (!empty($contextHistory)) { ?>
-            <div class="muted">История в сессии:</div>
-            <ul>
-                <?php foreach ($contextHistory as $historyItem) { ?>
-                    <li>
-                        <?= escHtml($historyItem['uid'] ?? 'unknown') ?> @ <?= escHtml($historyItem['accountId'] ?? 'unknown') ?>,
-                        <?= escHtml(formatContextSavedAtForUi($historyItem['savedAt'] ?? null)) ?>
-                    </li>
-                <?php } ?>
-            </ul>
-        <?php } ?>
         <div class="panel-divider"></div>
         <h2 title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">
             Открытый объект <span class="hint">(?)</span>
@@ -377,7 +359,6 @@
     window.widgetLog = widgetLog;
 
     const getObjectUrl = <?= json_encode($getObjectUrl ?? '') ?>;
-    const contextToken = <?= json_encode($contextToken ?? '') ?>;
     const objectEl = document.getElementById('object');
 
     const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
@@ -533,11 +514,9 @@
             widgetLog('Event: Open', message);
             maybeAutoOpenFeedback(message);
 
-            if (objectEl && getObjectUrl && contextToken && message && message.objectId) {
-                fetch(`${getObjectUrl}${message.objectId}`, {
-                    headers: {
-                        Authorization: `Bearer ${contextToken}`
-                    }
+            if (objectEl && getObjectUrl && message && message.objectId) {
+                fetch(`${getObjectUrl}${encodeURIComponent(message.objectId)}`, {
+                    credentials: 'same-origin'
                 })
                     .then(async response => {
                         const text = await response.text();
@@ -554,8 +533,8 @@
                     .catch(error => {
                         widgetLog('object fetch error', {message: error.message || String(error)});
                     });
-            } else if (!contextToken) {
-                widgetLog('object fetch skipped', {reason: 'missing context token'});
+            } else if (!message || !message.objectId) {
+                widgetLog('object fetch skipped', {reason: 'missing objectId'});
             }
         });
         sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));

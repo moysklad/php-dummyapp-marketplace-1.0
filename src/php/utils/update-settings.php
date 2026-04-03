@@ -2,11 +2,11 @@
 
 require_once __DIR__ . '/../lib/lib.php';
 
-$authContext = resolveBackendContextFromRequest();
+$authContext = resolveBackendContextFromSession();
 
 if (!$authContext) {
     http_response_code(401);
-    exit('Некорректный токен контекста');
+    exit('Контекст пользователя в сессии не найден. Откройте iframe заново и повторите попытку.');
 }
 
 if (empty($authContext['isAdmin'])) {

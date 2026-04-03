@@ -269,25 +269,6 @@
             </li>
         </ul>
         <div class="panel-divider"></div>
-        <h2>contextKey и сессия</h2>
-        <ul class="info-list">
-            <li>contextKey: <code><?= escHtml($contextKey) ?></code></li>
-            <li>Источник контекста: <b><?= escHtml($contextSource) ?></b></li>
-            <li>Session ID: <code><?= escHtml($sessionId) ?></code></li>
-        </ul>
-        <?php if (!empty($contextHistory)) { ?>
-            <p class="muted">Последние контексты в сессии:</p>
-            <ul class="info-list">
-                <?php foreach ($contextHistory as $historyItem) { ?>
-                    <li>
-                        <?= escHtml($historyItem['fio'] ?? 'unknown') ?> (<?= escHtml($historyItem['uid'] ?? 'unknown') ?>),
-                        accountId: <?= escHtml($historyItem['accountId'] ?? 'unknown') ?>,
-                        <?= escHtml(formatContextSavedAtForUi($historyItem['savedAt'] ?? null)) ?>
-                    </li>
-                <?php } ?>
-            </ul>
-        <?php } ?>
-        <div class="panel-divider"></div>
         <h2>Состояние решения</h2>
         <div class="status-box <?= $isSettingsRequired ? 'status-required' : 'status-ready' ?>">
             <div class="status-title">
@@ -317,7 +298,7 @@
                         <?php } ?>
                     </select>
                 </div>
-                <input type="hidden" name="contextToken" value="<?= escHtml($contextToken) ?>"/>
+                <input type="hidden" name="contextKey" value="<?= escHtml($contextKey) ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
         <?php } else { ?>

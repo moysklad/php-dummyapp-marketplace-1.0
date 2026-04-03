@@ -6,11 +6,11 @@ $entitiesMap = [
     'invoiceout' => 'Счет покупателю',
 ];
 
-$authContext = resolveBackendContextFromRequest();
+$authContext = resolveBackendContextFromSession();
 
 if (!$authContext) {
     http_response_code(401);
-    exit('Некорректный токен контекста');
+    exit('Контекст пользователя в сессии не найден. Откройте iframe/виджет заново.');
 }
 
 $entity = trim((string)($_GET['entity'] ?? ''));

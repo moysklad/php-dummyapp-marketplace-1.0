@@ -54,11 +54,6 @@ function escHtml($value): string
 //
 
 const USER_CONTEXT_SESSION_KEY = 'userContext';
-const USER_CONTEXT_HISTORY_LIMIT = 10;
-const CONTEXT_KEY_TTL_SECONDS = 300;
-const BACKEND_CONTEXT_TOKEN_TTL_SECONDS = 900;
-const BACKEND_CONTEXT_TOKEN_AUDIENCE = 'php-demo-backend';
-const BACKEND_CONTEXT_TOKEN_PURPOSE = 'backend-context';
 
 function isHttpsRequest(): bool
 {
@@ -101,7 +96,6 @@ function &userContextSessionBucket(): array
         $_SESSION[USER_CONTEXT_SESSION_KEY] = [
             'byContextKey' => [],
             'lastContextKey' => null,
-            'history' => [],
         ];
     }
 
@@ -111,24 +105,11 @@ function &userContextSessionBucket(): array
 function saveUserContextToSession(string $contextKey, array $context): void
 {
     $bucket = &userContextSessionBucket();
-    $savedAt = time();
 
     $context['contextKey'] = $contextKey;
-    $context['savedAt'] = $savedAt;
 
     $bucket['byContextKey'][$contextKey] = $context;
     $bucket['lastContextKey'] = $contextKey;
-    $bucket['history'][] = [
-        'contextKey' => $contextKey,
-        'uid' => $context['uid'] ?? null,
-        'fio' => $context['fio'] ?? null,
-        'accountId' => $context['accountId'] ?? null,
-        'savedAt' => $savedAt,
-    ];
-
-    if (count($bucket['history']) > USER_CONTEXT_HISTORY_LIMIT) {
-        $bucket['history'] = array_slice($bucket['history'], -USER_CONTEXT_HISTORY_LIMIT);
-    }
 }
 
 function loadUserContextFromSession(?string $contextKey = null): ?array
@@ -136,235 +117,46 @@ function loadUserContextFromSession(?string $contextKey = null): ?array
     $bucket = &userContextSessionBucket();
 
     if ($contextKey !== null) {
-        return $bucket['byContextKey'][$contextKey] ?? null;
+        $context = $bucket['byContextKey'][$contextKey] ?? null;
+
+        if (!is_array($context)) {
+            return null;
+        }
+
+        return $context;
     }
 
     $lastContextKey = $bucket['lastContextKey'] ?? null;
 
-    if ($lastContextKey !== null && isset($bucket['byContextKey'][$lastContextKey])) {
-        return $bucket['byContextKey'][$lastContextKey];
+    if ($lastContextKey !== null) {
+        return loadUserContextFromSession($lastContextKey);
     }
 
     return null;
 }
 
-function getUserContextHistoryFromSession(int $limit = 5): array
+function getContextKeyFromRequest(): ?string
 {
-    $bucket = &userContextSessionBucket();
-    $history = $bucket['history'] ?? [];
+    $contextKey = $_POST['contextKey'] ?? $_GET['contextKey'] ?? null;
 
-    if ($limit > 0) {
-        $history = array_slice($history, -$limit);
-    }
-
-    return array_reverse($history);
-}
-
-function buildSessionContextMeta(int $historyLimit = 5): array
-{
-    ensureSessionStarted();
-
-    return [
-        'sessionId' => session_id(),
-        'contextHistory' => getUserContextHistoryFromSession($historyLimit),
-    ];
-}
-
-function formatContextSavedAtForUi($savedAt): string
-{
-    if (empty($savedAt)) {
-        return 'n/a';
-    }
-
-    $savedAtTs = (int)$savedAt;
-    $elapsedSeconds = max(0, time() - $savedAtTs);
-    $elapsedMinutes = (int)floor($elapsedSeconds / 60);
-    $ttlMinutes = (int)ceil(CONTEXT_KEY_TTL_SECONDS / 60);
-
-    if ($elapsedMinutes <= 0) {
-        return "меньше 1 мин назад (TTL contextKey ~{$ttlMinutes} мин)";
-    }
-
-    return "{$elapsedMinutes} мин назад (TTL contextKey ~{$ttlMinutes} мин)";
-}
-
-function buildBackendContextToken(array $context): string
-{
-    $accountId = trim((string)($context['accountId'] ?? ''));
-    $uid = trim((string)($context['uid'] ?? ''));
-
-    if ($accountId === '' || $uid === '') {
-        throw new InvalidArgumentException('Context must include accountId and uid');
-    }
-
-    $issuedAt = time();
-
-    $payload = [
-        'iss' => cfg()->appUid,
-        'aud' => BACKEND_CONTEXT_TOKEN_AUDIENCE,
-        'iat' => $issuedAt,
-        'exp' => $issuedAt + BACKEND_CONTEXT_TOKEN_TTL_SECONDS,
-        'jti' => bin2hex(random_bytes(16)),
-        'purpose' => BACKEND_CONTEXT_TOKEN_PURPOSE,
-        'accountId' => $accountId,
-        'uid' => $uid,
-        'isAdmin' => (bool)($context['isAdmin'] ?? false),
-    ];
-
-    return JWT::encode($payload, cfg()->secretKey);
-}
-
-function getRequestHeadersSafe(): array
-{
-    if (function_exists('getallheaders')) {
-        $headers = getallheaders();
-
-        return is_array($headers) ? $headers : [];
-    }
-
-    if (function_exists('apache_request_headers')) {
-        $headers = apache_request_headers();
-
-        return is_array($headers) ? $headers : [];
-    }
-
-    $headers = [];
-
-    foreach ($_SERVER as $name => $value) {
-        if (strpos($name, 'HTTP_') !== 0) {
-            continue;
-        }
-
-        $normalizedName = str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))));
-        $headers[$normalizedName] = $value;
-    }
-
-    return $headers;
-}
-
-function getRequestHeaderValue(string $name): ?string
-{
-    $headers = getRequestHeadersSafe();
-
-    foreach ($headers as $headerName => $headerValue) {
-        if (strcasecmp((string)$headerName, $name) === 0) {
-            return trim((string)$headerValue);
-        }
-    }
-
-    return null;
-}
-
-function getBearerTokenFromHeader(?string $authorizationHeader): ?string
-{
-    if (empty($authorizationHeader)) {
+    if ($contextKey === null) {
         return null;
     }
 
-    $prefix = 'Bearer ';
+    $contextKey = trim((string)$contextKey);
 
-    if (strncasecmp($authorizationHeader, $prefix, strlen($prefix)) !== 0) {
-        return null;
-    }
-
-    $token = trim(substr($authorizationHeader, strlen($prefix)));
-
-    return $token === '' ? null : $token;
+    return $contextKey === '' ? null : $contextKey;
 }
 
-function getBackendContextTokenFromRequest(): ?string
+function resolveBackendContextFromSession(): ?array
 {
-    $authHeader = getRequestHeaderValue('Authorization');
-    $tokenFromHeader = getBearerTokenFromHeader($authHeader);
+    $contextKey = getContextKeyFromRequest();
 
-    if ($tokenFromHeader !== null) {
-        return $tokenFromHeader;
+    if ($contextKey !== null) {
+        return loadUserContextFromSession($contextKey);
     }
 
-    // Fallback для POST-форм и ручной отладки в браузере без Authorization header.
-    $token = $_POST['contextToken'] ?? $_GET['contextToken'] ?? null;
-
-    if ($token === null) {
-        return null;
-    }
-
-    $token = trim((string)$token);
-
-    return $token === '' ? null : $token;
-}
-
-function backendContextAudienceIsValid($audienceClaim): bool
-{
-    if (is_string($audienceClaim)) {
-        return $audienceClaim === BACKEND_CONTEXT_TOKEN_AUDIENCE;
-    }
-
-    if (is_array($audienceClaim)) {
-        return in_array(BACKEND_CONTEXT_TOKEN_AUDIENCE, $audienceClaim, true);
-    }
-
-    return false;
-}
-
-function decodeBackendContextToken(string $token): ?array
-{
-    try {
-        $decoded = JWT::decode($token, cfg()->secretKey, ['HS256']);
-    } catch (Exception $exception) {
-        log_message('WARN', 'Context token decode failed: ' . $exception->getMessage());
-
-        return null;
-    }
-
-    if (!is_object($decoded)) {
-        log_message('WARN', 'Context token payload is not an object');
-
-        return null;
-    }
-
-    if (($decoded->purpose ?? null) !== BACKEND_CONTEXT_TOKEN_PURPOSE) {
-        log_message('WARN', 'Context token has invalid purpose');
-
-        return null;
-    }
-
-    if (($decoded->iss ?? null) !== cfg()->appUid) {
-        log_message('WARN', 'Context token has invalid issuer');
-
-        return null;
-    }
-
-    if (!backendContextAudienceIsValid($decoded->aud ?? null)) {
-        log_message('WARN', 'Context token has invalid audience');
-
-        return null;
-    }
-
-    $accountId = trim((string)($decoded->accountId ?? ''));
-    $uid = trim((string)($decoded->uid ?? ''));
-
-    if ($accountId === '' || $uid === '') {
-        log_message('WARN', 'Context token is missing required claims');
-
-        return null;
-    }
-
-    return [
-        'accountId' => $accountId,
-        'uid' => $uid,
-        'isAdmin' => (bool)($decoded->isAdmin ?? false),
-    ];
-}
-
-function resolveBackendContextFromRequest(): ?array
-{
-    $contextToken = getBackendContextTokenFromRequest();
-
-    if ($contextToken === null) {
-        return null;
-    }
-
-    return decodeBackendContextToken($contextToken);
+    return loadUserContextFromSession();
 }
 
 //

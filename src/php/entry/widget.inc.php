@@ -7,15 +7,10 @@ if (!defined('WIDGET_ENTRY')) {
 $uid = $context['uid'];
 $fio = $context['fio'];
 $contextKey = $context['contextKey'] ?? '';
-$sessionId = $context['sessionId'] ?? '';
-$contextHistory = $context['contextHistory'] ?? [];
-$contextSourceNames = [
-    'vendor-api' => 'Vendor API (по contextKey)',
-    'session' => 'PHP сессия (кэш по contextKey)',
-];
-$contextSource = $contextSourceNames[$context['contextSource']] ?? ($context['contextSource'] ?? 'unknown');
-$contextToken = buildBackendContextToken($context);
 
-$getObjectUrl = "/utils/get-object.php?entity=$entity&objectId=";
+$getObjectUrl = '/utils/get-object.php?' . http_build_query([
+        'entity' => $entity,
+        'contextKey' => $contextKey,
+    ]) . '&objectId=';
 
 require __DIR__ . '/widget.html.php';
