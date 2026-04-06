@@ -333,7 +333,7 @@
 <script>
     const logEl = document.getElementById('log');
 
-    // Log to UI panel when present, fall back to console otherwise.
+    // Пишем лог в UI, а если панели нет - в console.
     const widgetLog = (label, payload) => {
         const ts = new Date().toISOString().replace('T', ' ').replace('Z', '');
         const data = payload ? JSON.stringify(payload, null, 2) : '';
@@ -349,15 +349,15 @@
     window.widgetLog = widgetLog;
 
     const sdkNamespace = window.WidgetSDK;
-    // Guard against missing SDK script.
+    // Защита на случай, если SDK-скрипт не загрузился.
     const sdk = sdkNamespace ? sdkNamespace.create({debug: true}) : null;
 
     if (sdk) {
-        // Expose for easier debugging in the console.
+        // Экспортируем SDK в window для удобной отладки.
         window.widgetSdk = sdk;
     }
 
-    // Parse JSON when possible, otherwise return a trimmed string.
+    // Пробуем разобрать JSON, иначе возвращаем trimmed-строку.
     const parseMaybeJson = (value) => {
         if (value === undefined || value === null) {
             return undefined;

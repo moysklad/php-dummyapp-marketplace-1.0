@@ -343,7 +343,7 @@
 <script>
     const logEl = document.getElementById('log');
 
-    // Log to UI panel when present, fall back to console otherwise.
+    // Пишем лог в UI, а если панели нет - в console.
     const widgetLog = (label, payload) => {
         const ts = new Date().toISOString().replace('T', ' ').replace('Z', '');
         const data = payload ? JSON.stringify(payload, null, 2) : '';
@@ -364,15 +364,15 @@
     const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
 
     const sdkNamespace = window.WidgetSDK;
-    // Guard against missing SDK script.
+    // Защита на случай, если SDK-скрипт не загрузился.
     const sdk = sdkNamespace ? sdkNamespace.create({debug: true}) : null;
 
     if (sdk) {
-        // Expose for easier debugging in the console.
+        // Экспортируем SDK в window для удобной отладки.
         window.widgetSdk = sdk;
     }
 
-    // Parse JSON when possible, otherwise return a trimmed string.
+    // Пробуем разобрать JSON, иначе возвращаем trimmed-строку.
     const parseMaybeJson = (value) => {
         if (value === undefined || value === null) {
             return undefined;
@@ -425,7 +425,7 @@
 
     let objectState = {};
 
-    // Safe shallow-ish equality for diffing; falls back to JSON compare for objects.
+    // Сравнение значений для diff; для объектов fallback на JSON-сравнение.
     const valuesEqual = (left, right) => {
         if (left === right) {
             return true;
@@ -442,7 +442,7 @@
         return false;
     };
 
-    // Compute changed keys between two object states.
+    // Вычисляем измененные ключи между двумя состояниями objectState.
     const diffs = (oldState, newState) => {
         const result = new Map();
 
@@ -473,7 +473,7 @@
         return result;
     };
 
-    // Format diff map for logging.
+    // Форматируем diff-map для лога.
     const formatDiffs = (map) => {
         if (!map || map.size === 0) {
             return 'objectState: no changes';
@@ -499,7 +499,7 @@
         widgetLog('SDK initialized', {debug: true});
         setSdkControlsEnabled(true);
 
-        // Auto-open feedback after Open event.
+        // Автоматически отправляем openFeedback после события Open.
         const maybeAutoOpenFeedback = (openMessage) => {
             const resolvedId = openMessage?.messageId;
 

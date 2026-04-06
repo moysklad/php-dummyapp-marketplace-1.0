@@ -29,7 +29,7 @@ $notify = $app->status != AppInstance::ACTIVATED;
 
 $app->status = AppInstance::ACTIVATED;
 
-// так как PUT - идемпотентный метод, можем дергать несколько раз или можем только один раз при первой активации дергать
+// PUT идемпотентен, поэтому допустимо вызывать обновление статуса повторно.
 //if ($notify) {
 vendorApi()->updateAppStatus(cfg()->appId, $accountId, $app->getStatusName());
 //}

@@ -7,7 +7,7 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
 const LOG_LEVEL = 'DEBUG';
-//const LOG_LEVEL = 'INFO';
+// const LOG_LEVEL = 'INFO';
 
 /**
  * Укажите ваши значения конфигурационных параметров в этом файле, либо заполните соотв. переменные окружения

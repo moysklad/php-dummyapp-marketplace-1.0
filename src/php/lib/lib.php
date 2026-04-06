@@ -4,9 +4,7 @@ use \Firebase\JWT\JWT;
 
 require_once __DIR__ . '/jwt.lib.php';
 
-//
-//  Config
-//
+// Конфигурация
 
 class AppConfig
 {
@@ -47,11 +45,9 @@ function escHtml($value): string
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
-//
-//  Session-based user context storage
-//  DEMO ONLY: serves as an example for contextKey/session flow.
-//  Do not use as-is in production without hardening.
-//
+// Хранение пользовательского контекста в сессии.
+// DEMO: пример потока contextKey -> $_SESSION.
+// Для production нужна дополнительная защита.
 
 const USER_CONTEXT_SESSION_KEY = 'userContext';
 
@@ -76,8 +72,8 @@ function ensureSessionStarted(): void
 
     $sessionOptions = [
         'cookie_httponly' => true,
-        // iframe в UI МоегоСклада открывается в third-party контексте:
-        // для работы cookie сессии нужен SameSite=None (+ Secure на HTTPS).
+        // В iframe UI МоегоСклада используется third-party контекст:
+        // для cookie сессии нужен SameSite=None (+ Secure на HTTPS).
         'cookie_samesite' => $isHttps ? 'None' : 'Lax',
     ];
 
@@ -159,9 +155,7 @@ function resolveBackendContextFromSession(): ?array
     return loadUserContextFromSession();
 }
 
-//
-//  Vendor API 1.0
-//
+// Vendor API 1.0
 
 class VendorApi
 {
@@ -275,9 +269,7 @@ function buildJWT(): string
     return JWT::encode($token, cfg()->secretKey);
 }
 
-//
-//  JSON API 1.2
-//
+// JSON API 1.2
 
 class JsonApi
 {
@@ -316,9 +308,7 @@ function jsonApi(): JsonApi
     return $GLOBALS['jsonApi'];
 }
 
-//
-//  Logging
-//
+// Логирование
 
 const LOG_LEVELS = [
     'DEBUG' => 1,
@@ -337,14 +327,12 @@ function log_message($level, $message)
             $message
         );
 
-        // Пишем в stderr для Docker
+        // Пишем логи в stderr для Docker.
         file_put_contents('php://stderr', $log_entry, FILE_APPEND);
     }
 }
 
-//
-//  AppInstance state
-//
+// Состояние AppInstance
 
 $currentAppInstance = null;
 

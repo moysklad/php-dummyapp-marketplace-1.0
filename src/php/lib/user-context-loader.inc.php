@@ -1,6 +1,6 @@
 <?php
 
-// DEMO ONLY: reads user context via contextKey and caches it in PHP session for examples.
+// DEMO: получаем контекст пользователя по contextKey и кэшируем его в PHP-сессии.
 $contextKey = trim((string)($_GET['contextKey'] ?? ''));
 $context = null;
 
