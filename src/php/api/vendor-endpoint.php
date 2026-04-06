@@ -87,7 +87,7 @@ function checkAppStatus($appId, $accountId, $status)
 {
     if (!$status) {
         log_message('INFO', "App appId=$appId not installed on accountId=$accountId");
-        http_response_code(404);
+        http_response_code(204);
 
         exit(0);
     }
