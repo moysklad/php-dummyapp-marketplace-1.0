@@ -50,6 +50,7 @@ function escHtml($value): string
 // Для production нужна дополнительная защита.
 
 const USER_CONTEXT_SESSION_KEY = 'userContext';
+const USER_CONTEXT_STACK_LIMIT = 10;
 
 function isHttpsRequest(): bool
 {
@@ -91,9 +92,19 @@ function &userContextSessionBucket(): array
     if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY])) {
         $_SESSION[USER_CONTEXT_SESSION_KEY] = [
             'byContextKey' => [],
-            'lastContextKey' => null,
+            'contextKeyStack' => [],
         ];
     }
+
+    if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey']) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey'])) {
+        $_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey'] = [];
+    }
+
+    if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack']) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack'])) {
+        $_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack'] = [];
+    }
+
+    trimUserContextBucket($_SESSION[USER_CONTEXT_SESSION_KEY]);
 
     return $_SESSION[USER_CONTEXT_SESSION_KEY];
 }
@@ -105,30 +116,27 @@ function saveUserContextToSession(string $contextKey, array $context): void
     $context['contextKey'] = $contextKey;
 
     $bucket['byContextKey'][$contextKey] = $context;
-    $bucket['lastContextKey'] = $contextKey;
+
+    $updatedStack = [];
+
+    foreach ($bucket['contextKeyStack'] as $existingKey) {
+        if ($existingKey !== $contextKey) {
+            $updatedStack[] = $existingKey;
+        }
+    }
+
+    $updatedStack[] = $contextKey;
+    $bucket['contextKeyStack'] = $updatedStack;
+
+    trimUserContextBucket($bucket);
 }
 
-function loadUserContextFromSession(?string $contextKey = null): ?array
+function loadUserContextFromSession(string $contextKey): ?array
 {
     $bucket = &userContextSessionBucket();
+    $context = $bucket['byContextKey'][$contextKey] ?? null;
 
-    if ($contextKey !== null) {
-        $context = $bucket['byContextKey'][$contextKey] ?? null;
-
-        if (!is_array($context)) {
-            return null;
-        }
-
-        return $context;
-    }
-
-    $lastContextKey = $bucket['lastContextKey'] ?? null;
-
-    if ($lastContextKey !== null) {
-        return loadUserContextFromSession($lastContextKey);
-    }
-
-    return null;
+    return is_array($context) ? $context : null;
 }
 
 function getContextKeyFromRequest(): ?string
@@ -148,11 +156,63 @@ function resolveBackendContextFromSession(): ?array
 {
     $contextKey = getContextKeyFromRequest();
 
-    if ($contextKey !== null) {
-        return loadUserContextFromSession($contextKey);
+    if ($contextKey === null) {
+        return null;
     }
 
-    return loadUserContextFromSession();
+    return loadUserContextFromSession($contextKey);
+}
+
+function trimUserContextBucket(array &$bucket): void
+{
+    $contexts = $bucket['byContextKey'] ?? [];
+    $rawStack = $bucket['contextKeyStack'] ?? [];
+
+    if (!is_array($contexts)) {
+        $contexts = [];
+    }
+
+    if (!is_array($rawStack)) {
+        $rawStack = [];
+    }
+
+    $stack = [];
+    $seen = [];
+
+    foreach ($rawStack as $contextKey) {
+        if (!is_string($contextKey) || $contextKey === '' || !array_key_exists($contextKey, $contexts) || isset($seen[$contextKey])) {
+            continue;
+        }
+
+        $seen[$contextKey] = true;
+        $stack[] = $contextKey;
+    }
+
+    foreach ($contexts as $contextKey => $_context) {
+        if (!is_string($contextKey) || $contextKey === '') {
+            continue;
+        }
+
+        if (!isset($seen[$contextKey])) {
+            $seen[$contextKey] = true;
+            $stack[] = $contextKey;
+        }
+    }
+
+    if (count($stack) > USER_CONTEXT_STACK_LIMIT) {
+        $stack = array_slice($stack, -USER_CONTEXT_STACK_LIMIT);
+    }
+
+    $validKeys = array_flip($stack);
+
+    foreach (array_keys($contexts) as $contextKey) {
+        if (!isset($validKeys[$contextKey])) {
+            unset($contexts[$contextKey]);
+        }
+    }
+
+    $bucket['byContextKey'] = $contexts;
+    $bucket['contextKeyStack'] = $stack;
 }
 
 // Vendor API 1.0
