@@ -47,21 +47,10 @@ function escHtml($value): string
 
 // Хранение пользовательского контекста в сессии.
 // DEMO: пример потока contextKey -> $_SESSION.
-// Для production нужна дополнительная защита.
 
 const USER_CONTEXT_SESSION_KEY = 'userContext';
 const USER_CONTEXT_STACK_LIMIT = 10;
-
-function isHttpsRequest(): bool
-{
-    if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
-        return true;
-    }
-
-    $forwardedProto = strtolower((string)($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
-
-    return $forwardedProto === 'https';
-}
+const USER_CONTEXT_SESSION_TTL_SECONDS = 7200;
 
 function ensureSessionStarted(): void
 {
@@ -69,18 +58,14 @@ function ensureSessionStarted(): void
         return;
     }
 
-    $isHttps = isHttpsRequest();
+    // Срок жизни server-side сессии в секундах.
+    ini_set('session.gc_maxlifetime', (string)USER_CONTEXT_SESSION_TTL_SECONDS);
 
     $sessionOptions = [
         'cookie_httponly' => true,
-        // В iframe UI МоегоСклада используется third-party контекст:
-        // для cookie сессии нужен SameSite=None (+ Secure на HTTPS).
-        'cookie_samesite' => $isHttps ? 'None' : 'Lax',
+        'cookie_samesite' => 'None',
+        'cookie_secure' => true,
     ];
-
-    if ($isHttps) {
-        $sessionOptions['cookie_secure'] = true;
-    }
 
     session_start($sessionOptions);
 }
@@ -160,7 +145,24 @@ function resolveBackendContextFromSession(): ?array
         return null;
     }
 
-    return loadUserContextFromSession($contextKey);
+    $context = loadUserContextFromSession($contextKey);
+
+    if (!is_array($context)) {
+        return null;
+    }
+
+    $accountId = trim((string)($context['accountId'] ?? ''));
+    $uid = trim((string)($context['uid'] ?? ''));
+
+    if ($accountId === '' || $uid === '') {
+        return null;
+    }
+
+    return [
+        'accountId' => $accountId,
+        'uid' => $uid,
+        'isAdmin' => (bool)($context['isAdmin'] ?? false),
+    ];
 }
 
 function trimUserContextBucket(array &$bucket): void

@@ -515,6 +515,7 @@
             maybeAutoOpenFeedback(message);
 
             if (objectEl && getObjectUrl && message && message.objectId) {
+                // Передаем cookie той же origin, чтобы backend мог прочитать PHP-сессию.
                 fetch(`${getObjectUrl}${encodeURIComponent(message.objectId)}`, {
                     credentials: 'same-origin'
                 })
