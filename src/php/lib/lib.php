@@ -58,10 +58,8 @@ function ensureSessionStarted(): void
         return;
     }
 
-    // Срок жизни server-side сессии в секундах.
-    ini_set('session.gc_maxlifetime', (string)USER_CONTEXT_SESSION_TTL_SECONDS);
-
     $sessionOptions = [
+        'gc_maxlifetime' => USER_CONTEXT_SESSION_TTL_SECONDS,
         'cookie_httponly' => true,
         'cookie_samesite' => 'None',
         'cookie_secure' => true,
