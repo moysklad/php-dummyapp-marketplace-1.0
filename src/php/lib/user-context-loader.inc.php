@@ -23,7 +23,7 @@ if ($contextKey !== '') {
             'uid' => $employee->uid,
             'fio' => $employee->shortFio ?? '',
             'accountId' => $employee->accountId,
-            'isAdmin' => (bool)($employee->permissions->admin->view ?? false),
+            'isAdmin' => normalizeIsAdmin($employee->permissions->admin->view ?? false),
         ];
 
         saveUserContextToSession($contextKey, $context);

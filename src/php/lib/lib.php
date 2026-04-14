@@ -45,6 +45,19 @@ function escHtml($value): string
     return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
 }
 
+function normalizeIsAdmin($rawIsAdmin): bool
+{
+    if (is_bool($rawIsAdmin)) {
+        return $rawIsAdmin;
+    }
+
+    if (is_string($rawIsAdmin)) {
+        return strtoupper(trim($rawIsAdmin)) === 'ALL';
+    }
+
+    return false;
+}
+
 // Хранение пользовательского контекста в сессии.
 // DEMO: пример потока contextKey -> $_SESSION.
 
@@ -159,7 +172,7 @@ function resolveBackendContextFromSession(): ?array
     return [
         'accountId' => $accountId,
         'uid' => $uid,
-        'isAdmin' => (bool)($context['isAdmin'] ?? false),
+        'isAdmin' => normalizeIsAdmin($context['isAdmin'] ?? false),
     ];
 }
 
