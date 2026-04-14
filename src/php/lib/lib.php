@@ -58,6 +58,19 @@ function normalizeIsAdmin($rawIsAdmin): bool
     return false;
 }
 
+function checkIsAdmin($employee): bool
+{
+    if (!is_object($employee) || !isset($employee->permissions) || !is_object($employee->permissions)) {
+        return false;
+    }
+
+    if (!isset($employee->permissions->admin) || !is_object($employee->permissions->admin)) {
+        return false;
+    }
+
+    return normalizeIsAdmin($employee->permissions->admin->view ?? null);
+}
+
 // Хранение пользовательского контекста в сессии.
 // DEMO: пример потока contextKey -> $_SESSION.
 
@@ -172,7 +185,7 @@ function resolveBackendContextFromSession(): ?array
     return [
         'accountId' => $accountId,
         'uid' => $uid,
-        'isAdmin' => normalizeIsAdmin($context['isAdmin'] ?? false),
+        'isAdmin' => $context['isAdmin'],
     ];
 }
 
