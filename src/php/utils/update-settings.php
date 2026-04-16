@@ -2,12 +2,24 @@
 
 require_once __DIR__ . '/../lib/lib.php';
 
-$infoMessage = $_POST['infoMessage'];
-$store = $_POST['store'];
+$authContext = resolveBackendContextFromSession();
+
+if (!$authContext) {
+    http_response_code(401);
+    exit('Ошибка авторизации: передайте contextKey и откройте iframe заново.');
+}
+
+if (empty($authContext['isAdmin'])) {
+    http_response_code(403);
+    exit('Недостаточно прав');
+}
+
+$infoMessage = trim((string)($_POST['infoMessage'] ?? ''));
+$store = trim((string)($_POST['store'] ?? ''));
 
 log_message('INFO', "Update settings: $infoMessage, store: $store");
 
-$accountId = $_POST['accountId'];
+$accountId = $authContext['accountId'];
 
 $app = AppInstance::loadApp($accountId);
 $app->infoMessage = $infoMessage;
@@ -17,7 +29,7 @@ $notify = $app->status != AppInstance::ACTIVATED;
 
 $app->status = AppInstance::ACTIVATED;
 
-// так как PUT - идемпотентный метод, можем дергать несколько раз или можем только один раз при первой активации дергать
+// PUT идемпотентен, поэтому допустимо вызывать обновление статуса повторно.
 //if ($notify) {
 vendorApi()->updateAppStatus(cfg()->appId, $accountId, $app->getStatusName());
 //}

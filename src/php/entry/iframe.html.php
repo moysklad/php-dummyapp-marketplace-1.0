@@ -263,8 +263,8 @@
     <section class="panel">
         <h2>Информация о пользователе</h2>
         <ul class="info-list">
-            <li>Текущий пользователь: <?= $uid ?> (<?= $fio ?>)</li>
-            <li>Идентификатор аккаунта: <?= $accountId ?></li>
+            <li>Текущий пользователь: <?= escHtml($uid) ?> (<?= escHtml($fio) ?>)</li>
+            <li>Идентификатор аккаунта: <?= escHtml($accountId) ?></li>
             <li>Уровень доступа: <b><?= $isAdmin ? 'администратор аккаунта' : 'простой пользователь' ?></b>
             </li>
         </ul>
@@ -276,8 +276,8 @@
             </div>
             <?php if (!$isSettingsRequired) { ?>
                 <p>
-                    Сообщение: <?= $infoMessage ?><br>
-                    Выбран склад: <?= $store ?>
+                    Сообщение: <?= escHtml($infoMessage) ?><br>
+                    Выбран склад: <?= escHtml($store) ?>
                 </p>
             <?php } ?>
         </div>
@@ -294,11 +294,11 @@
                     <label for="store">Выберите склад</label>
                     <select id="store" name="store">
                         <?php foreach ($storesValues as $v) { ?>
-                            <option value="<?= $v ?>"><?= $v ?></option>
+                            <option value="<?= escHtml($v) ?>"><?= escHtml($v) ?></option>
                         <?php } ?>
                     </select>
                 </div>
-                <input type="hidden" name="accountId" value="<?= $accountId ?>"/>
+                <input type="hidden" name="contextKey" value="<?= escHtml($contextKey) ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
         <?php } else { ?>

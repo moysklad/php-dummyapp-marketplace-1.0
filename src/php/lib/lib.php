@@ -4,24 +4,26 @@ use \Firebase\JWT\JWT;
 
 require_once __DIR__ . '/jwt.lib.php';
 
-//
-//  Config
-//
+// Конфигурация
 
 class AppConfig
 {
-    var $appId = '';
-    var $appUid = '';
-    var $secretKey = '';
-    var $appBaseUrl = '';
+    public string $appId = '';
+    public string $appUid = '';
+    public string $secretKey = '';
+    public string $appBaseUrl = '';
 
-    var $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
-    var $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
+    public string $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
+    public string $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
 
     public function __construct(array $cfg)
     {
         foreach ($cfg as $k => $v) {
-            $this->$k = $v;
+            if (!property_exists($this, $k)) {
+                continue;
+            }
+
+            $this->$k = ($v === null || $v === false) ? '' : (string)$v;
         }
     }
 }
@@ -38,9 +40,208 @@ function cfg(): AppConfig
     return $GLOBALS['cfg'];
 }
 
-//
-//  Vendor API 1.0
-//
+function escHtml($value): string
+{
+    return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
+}
+
+function normalizeIsAdmin($rawIsAdmin): bool
+{
+    if (is_bool($rawIsAdmin)) {
+        return $rawIsAdmin;
+    }
+
+    if (is_string($rawIsAdmin)) {
+        return strtoupper(trim($rawIsAdmin)) === 'ALL';
+    }
+
+    return false;
+}
+
+function checkIsAdmin($employee): bool
+{
+    if (!is_object($employee) || !isset($employee->permissions) || !is_object($employee->permissions)) {
+        return false;
+    }
+
+    if (!isset($employee->permissions->admin) || !is_object($employee->permissions->admin)) {
+        return false;
+    }
+
+    return normalizeIsAdmin($employee->permissions->admin->view ?? null);
+}
+
+// Хранение пользовательского контекста в сессии.
+// DEMO: пример потока contextKey -> $_SESSION.
+
+const USER_CONTEXT_SESSION_KEY = 'userContext';
+const USER_CONTEXT_STACK_LIMIT = 10;
+const USER_CONTEXT_SESSION_TTL_SECONDS = 7200;
+
+function ensureSessionStarted(): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    $sessionOptions = [
+        'gc_maxlifetime' => USER_CONTEXT_SESSION_TTL_SECONDS,
+        'cookie_httponly' => true,
+        'cookie_samesite' => 'None',
+        'cookie_secure' => true,
+    ];
+
+    session_start($sessionOptions);
+}
+
+function &userContextSessionBucket(): array
+{
+    ensureSessionStarted();
+
+    if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY])) {
+        $_SESSION[USER_CONTEXT_SESSION_KEY] = [
+            'byContextKey' => [],
+            'contextKeyStack' => [],
+        ];
+    }
+
+    if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey']) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey'])) {
+        $_SESSION[USER_CONTEXT_SESSION_KEY]['byContextKey'] = [];
+    }
+
+    if (!isset($_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack']) || !is_array($_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack'])) {
+        $_SESSION[USER_CONTEXT_SESSION_KEY]['contextKeyStack'] = [];
+    }
+
+    trimUserContextBucket($_SESSION[USER_CONTEXT_SESSION_KEY]);
+
+    return $_SESSION[USER_CONTEXT_SESSION_KEY];
+}
+
+function saveUserContextToSession(string $contextKey, array $context): void
+{
+    $bucket = &userContextSessionBucket();
+
+    $context['contextKey'] = $contextKey;
+
+    $bucket['byContextKey'][$contextKey] = $context;
+
+    $updatedStack = [];
+
+    foreach ($bucket['contextKeyStack'] as $existingKey) {
+        if ($existingKey !== $contextKey) {
+            $updatedStack[] = $existingKey;
+        }
+    }
+
+    $updatedStack[] = $contextKey;
+    $bucket['contextKeyStack'] = $updatedStack;
+
+    trimUserContextBucket($bucket);
+}
+
+function loadUserContextFromSession(string $contextKey): ?array
+{
+    $bucket = &userContextSessionBucket();
+    $context = $bucket['byContextKey'][$contextKey] ?? null;
+
+    return is_array($context) ? $context : null;
+}
+
+function getContextKeyFromRequest(): ?string
+{
+    $contextKey = $_POST['contextKey'] ?? $_GET['contextKey'] ?? null;
+
+    if ($contextKey === null) {
+        return null;
+    }
+
+    $contextKey = trim((string)$contextKey);
+
+    return $contextKey === '' ? null : $contextKey;
+}
+
+function resolveBackendContextFromSession(): ?array
+{
+    $contextKey = getContextKeyFromRequest();
+
+    if ($contextKey === null) {
+        return null;
+    }
+
+    $context = loadUserContextFromSession($contextKey);
+
+    if (!is_array($context)) {
+        return null;
+    }
+
+    $accountId = trim((string)($context['accountId'] ?? ''));
+    $uid = trim((string)($context['uid'] ?? ''));
+
+    if ($accountId === '' || $uid === '') {
+        return null;
+    }
+
+    return [
+        'accountId' => $accountId,
+        'uid' => $uid,
+        'isAdmin' => $context['isAdmin'],
+    ];
+}
+
+function trimUserContextBucket(array &$bucket): void
+{
+    $contexts = $bucket['byContextKey'] ?? [];
+    $rawStack = $bucket['contextKeyStack'] ?? [];
+
+    if (!is_array($contexts)) {
+        $contexts = [];
+    }
+
+    if (!is_array($rawStack)) {
+        $rawStack = [];
+    }
+
+    $stack = [];
+    $seen = [];
+
+    foreach ($rawStack as $contextKey) {
+        if (!is_string($contextKey) || $contextKey === '' || !array_key_exists($contextKey, $contexts) || isset($seen[$contextKey])) {
+            continue;
+        }
+
+        $seen[$contextKey] = true;
+        $stack[] = $contextKey;
+    }
+
+    foreach ($contexts as $contextKey => $_context) {
+        if (!is_string($contextKey) || $contextKey === '') {
+            continue;
+        }
+
+        if (!isset($seen[$contextKey])) {
+            $seen[$contextKey] = true;
+            $stack[] = $contextKey;
+        }
+    }
+
+    if (count($stack) > USER_CONTEXT_STACK_LIMIT) {
+        $stack = array_slice($stack, -USER_CONTEXT_STACK_LIMIT);
+    }
+
+    $validKeys = array_flip($stack);
+
+    foreach (array_keys($contexts) as $contextKey) {
+        if (!isset($validKeys[$contextKey])) {
+            unset($contexts[$contextKey]);
+        }
+    }
+
+    $bucket['byContextKey'] = $contexts;
+    $bucket['contextKeyStack'] = $stack;
+}
+
+// Vendor API 1.0
 
 class VendorApi
 {
@@ -71,7 +272,7 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $data
 {
     $curl = curl_init($url);
 
-    $headers = array('Authorization: Bearer ' . $bearerToken, 'Accept-Encoding: gzip');
+    $headers = ['Authorization: Bearer ' . $bearerToken, 'Accept-Encoding: gzip'];
 
     if ($data) {
         $headers[] = 'Content-type: application/json';
@@ -108,14 +309,31 @@ function makeHttpRequest(string $method, string $url, string $bearerToken, $data
         log_message('ERROR', "Response error: $error");
 
         return null;
-    } else {
-        $headerSize = $info['header_size'];
-        $body = substr($response, $headerSize);
-
-        log_message('DEBUG', "Response: $method $url\n$response");
-
-        return json_decode($body);
     }
+
+    $statusCode = (int)($info['http_code'] ?? 0);
+    $headerSize = (int)($info['header_size'] ?? 0);
+    $body = substr((string)$response, $headerSize);
+
+    log_message('DEBUG', "Response: $method $url\n$response");
+
+    if ($statusCode >= 400) {
+        log_message('WARN', "HTTP $statusCode for $method $url");
+    }
+
+    if ($body === '') {
+        return null;
+    }
+
+    $decoded = json_decode($body);
+
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        log_message('WARN', "Failed to decode JSON for $method $url: " . json_last_error_msg());
+
+        return null;
+    }
+
+    return $decoded;
 }
 
 $vendorApi = new VendorApi();
@@ -127,19 +345,17 @@ function vendorApi(): VendorApi
 
 function buildJWT(): string
 {
-    $token = array(
-        "sub" => cfg()->appUid,
-        "iat" => time(),
-        "exp" => time() + 300,
-        "jti" => bin2hex(random_bytes(32))
-    );
+    $token = [
+        'sub' => cfg()->appUid,
+        'iat' => time(),
+        'exp' => time() + 300,
+        'jti' => bin2hex(random_bytes(32)),
+    ];
 
     return JWT::encode($token, cfg()->secretKey);
 }
 
-//
-//  JSON API 1.2
-//
+// JSON API 1.2
 
 class JsonApi
 {
@@ -178,9 +394,7 @@ function jsonApi(): JsonApi
     return $GLOBALS['jsonApi'];
 }
 
-//
-//  Logging
-//
+// Логирование
 
 const LOG_LEVELS = [
     'DEBUG' => 1,
@@ -199,14 +413,12 @@ function log_message($level, $message)
             $message
         );
 
-        // Пишем в stderr для Docker
+        // Пишем логи в stderr для Docker.
         file_put_contents('php://stderr', $log_entry, FILE_APPEND);
     }
 }
 
-//
-//  AppInstance state
-//
+// Состояние AppInstance
 
 $currentAppInstance = null;
 

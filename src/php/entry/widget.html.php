@@ -259,10 +259,10 @@
 <body>
 <main>
     <section class="panel settings">
-        <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API, используя contextKey">
+        <h2 title="Информацию о текущем пользователе виджет может получить на своем бэкенде через Vendor API">
             Текущий пользователь <span class="hint">(?)</span>
         </h2>
-        <div><?= $uid ?> (<?= $fio ?>)</div>
+        <div><?= escHtml($uid) ?> (<?= escHtml($fio) ?>)</div>
         <div class="panel-divider"></div>
         <h2 title="Используя objectId, переданный в сообщении Open, можем получить через JSON API открытую пользователем сущность/документ">
             Открытый объект <span class="hint">(?)</span>
@@ -343,7 +343,7 @@
 <script>
     const logEl = document.getElementById('log');
 
-    // Log to UI panel when present, fall back to console otherwise.
+    // Пишем лог в UI, а если панели нет - в console.
     const widgetLog = (label, payload) => {
         const ts = new Date().toISOString().replace('T', ' ').replace('Z', '');
         const data = payload ? JSON.stringify(payload, null, 2) : '';
@@ -364,15 +364,15 @@
     const AUTO_OPEN_FEEDBACK_DELAY_MS = 1000;
 
     const sdkNamespace = window.WidgetSDK;
-    // Guard against missing SDK script.
+    // Защита на случай, если SDK-скрипт не загрузился.
     const sdk = sdkNamespace ? sdkNamespace.create({debug: true}) : null;
 
     if (sdk) {
-        // Expose for easier debugging in the console.
+        // Экспортируем SDK в window для удобной отладки.
         window.widgetSdk = sdk;
     }
 
-    // Parse JSON when possible, otherwise return a trimmed string.
+    // Пробуем разобрать JSON, иначе возвращаем trimmed-строку.
     const parseMaybeJson = (value) => {
         if (value === undefined || value === null) {
             return undefined;
@@ -425,7 +425,7 @@
 
     let objectState = {};
 
-    // Safe shallow-ish equality for diffing; falls back to JSON compare for objects.
+    // Сравнение значений для diff; для объектов fallback на JSON-сравнение.
     const valuesEqual = (left, right) => {
         if (left === right) {
             return true;
@@ -442,7 +442,7 @@
         return false;
     };
 
-    // Compute changed keys between two object states.
+    // Вычисляем измененные ключи между двумя состояниями objectState.
     const diffs = (oldState, newState) => {
         const result = new Map();
 
@@ -473,7 +473,7 @@
         return result;
     };
 
-    // Format diff map for logging.
+    // Форматируем diff-map для лога.
     const formatDiffs = (map) => {
         if (!map || map.size === 0) {
             return 'objectState: no changes';
@@ -499,7 +499,7 @@
         widgetLog('SDK initialized', {debug: true});
         setSdkControlsEnabled(true);
 
-        // Auto-open feedback after Open event.
+        // Автоматически отправляем openFeedback после события Open.
         const maybeAutoOpenFeedback = (openMessage) => {
             const resolvedId = openMessage?.messageId;
 
@@ -515,14 +515,27 @@
             maybeAutoOpenFeedback(message);
 
             if (objectEl && getObjectUrl && message && message.objectId) {
-                fetch(`${getObjectUrl}${message.objectId}`)
-                    .then(response => response.text())
+                // Передаем cookie той же origin, чтобы backend мог прочитать PHP-сессию.
+                fetch(`${getObjectUrl}${encodeURIComponent(message.objectId)}`, {
+                    credentials: 'same-origin'
+                })
+                    .then(async response => {
+                        const text = await response.text();
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${text}`);
+                        }
+
+                        return text;
+                    })
                     .then(text => {
                         objectEl.textContent = text;
                     })
                     .catch(error => {
                         widgetLog('object fetch error', {message: error.message || String(error)});
                     });
+            } else if (!message || !message.objectId) {
+                widgetLog('object fetch skipped', {reason: 'missing objectId'});
             }
         });
         sdk.onOpenPopup(message => widgetLog('Event: OpenPopup', message));
