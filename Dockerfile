@@ -4,13 +4,14 @@ FROM php:8.2-apache
 # Устанавливаем системные зависимости
 RUN apt-get update && apt-get install -y \
     libzip-dev \
+    libsqlite3-dev \
     zip \
     unzip \
     libcurl4-openssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Устанавливаем расширения PHP
-RUN docker-php-ext-install zip opcache curl
+RUN docker-php-ext-install zip opcache curl pdo_sqlite
 
 # Включаем модуль Apache rewrite
 #RUN a2enmod rewrite
@@ -35,6 +36,7 @@ ENV APP_ID=195d5446-9da8-47ee-abb9-e808e4f283d7
 ENV APP_UID=php-demo-app.moysklad
 ENV APP_BASE_URL=https://php-demo.testms-test.lognex.ru
 ENV APP_SECRET_KEY=secret-key-example
+ENV APP_DB_PATH=/var/www/html/src/php/data/app.sqlite
 
 # Порт, который будет слушать Apache
 EXPOSE 80

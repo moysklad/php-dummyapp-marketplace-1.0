@@ -1,4 +1,6 @@
 src/php/config.php
+src/php/data/*.app
+src/php/data/*.sqlite
 .idea
 *.iml
 **/.DS_Store

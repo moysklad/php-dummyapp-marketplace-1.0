@@ -12,6 +12,7 @@ class AppConfig
     public string $appUid = '';
     public string $secretKey = '';
     public string $appBaseUrl = '';
+    public string $databasePath = '';
 
     public string $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
     public string $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
@@ -33,6 +34,13 @@ $cfg = new AppConfig(require(__DIR__ . '/../config.php'));
 function dataDir(): string
 {
     return __DIR__ . '/../data';
+}
+
+function appDatabasePath(): string
+{
+    $configuredPath = trim(cfg()->databasePath);
+
+    return $configuredPath !== '' ? $configuredPath : dataDir() . '/app.sqlite';
 }
 
 function cfg(): AppConfig
@@ -469,23 +477,12 @@ class AppInstance
 
     function persist()
     {
-        @mkdir(dataDir());
-        file_put_contents($this->filename(), serialize($this));
+        appInstanceRepository()->persist($this);
     }
 
     function delete()
     {
-        @unlink($this->filename());
-    }
-
-    private function filename()
-    {
-        return self::buildFilename($this->appId, $this->accountId);
-    }
-
-    private static function buildFilename($appId, $accountId)
-    {
-        return dataDir() . "/$appId.$accountId.app";
+        appInstanceRepository()->delete($this->appId, $this->accountId);
     }
 
     static function loadApp($accountId): AppInstance
@@ -495,16 +492,19 @@ class AppInstance
 
     static function load($appId, $accountId): AppInstance
     {
-        $data = @file_get_contents(self::buildFilename($appId, $accountId));
-
-        if ($data === false) {
-            $app = new AppInstance($appId, $accountId);
-        } else {
-            $app = unserialize($data);
-        }
+        $app = appInstanceRepository()->load($appId, $accountId);
 
         $GLOBALS['currentAppInstance'] = $app;
 
         return $app;
     }
+}
+
+require_once __DIR__ . '/app-instance-sqlite-repository.php';
+
+$appInstanceRepository = new AppInstanceSqliteRepository();
+
+function appInstanceRepository(): AppInstanceSqliteRepository
+{
+    return $GLOBALS['appInstanceRepository'];
 }
