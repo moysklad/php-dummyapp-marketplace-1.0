@@ -3,21 +3,26 @@
 class AppInstanceSqliteRepository
 {
     private ?PDO $pdo = null;
+    private ?PDOStatement $loadStatement = null;
+    private ?PDOStatement $persistStatement = null;
+    private ?PDOStatement $deleteStatement = null;
 
     public function load(string $appId, string $accountId): AppInstance
     {
-        $statement = $this->connection()->prepare(
-            'SELECT status, access_token, info_message, store
-            FROM account_application
-            WHERE application_id = :application_id AND account_id = :account_id'
-        );
+        if ($this->loadStatement === null) {
+            $this->loadStatement = $this->connection()->prepare(
+                'SELECT status, access_token, info_message, store
+                FROM account_application
+                WHERE application_id = :application_id AND account_id = :account_id'
+            );
+        }
 
-        $statement->execute([
+        $this->loadStatement->execute([
             ':application_id' => $appId,
             ':account_id' => $accountId,
         ]);
 
-        $row = $statement->fetch(PDO::FETCH_ASSOC);
+        $row = $this->loadStatement->fetch(PDO::FETCH_ASSOC);
         $app = new AppInstance($appId, $accountId);
 
         if ($row === false) {
@@ -34,36 +39,39 @@ class AppInstanceSqliteRepository
 
     public function persist(AppInstance $app): void
     {
-        $timestamp = gmdate('c');
-        $statement = $this->connection()->prepare(
-            'INSERT INTO account_application (
-                account_id,
-                application_id,
-                status,
-                access_token,
-                info_message,
-                store,
-                created_at,
-                updated_at
-            ) VALUES (
-                :account_id,
-                :application_id,
-                :status,
-                :access_token,
-                :info_message,
-                :store,
-                :created_at,
-                :updated_at
-            )
-            ON CONFLICT(account_id, application_id) DO UPDATE SET
-                status = excluded.status,
-                access_token = excluded.access_token,
-                info_message = excluded.info_message,
-                store = excluded.store,
-                updated_at = excluded.updated_at'
-        );
+        if ($this->persistStatement === null) {
+            $this->persistStatement = $this->connection()->prepare(
+                'INSERT INTO account_application (
+                    account_id,
+                    application_id,
+                    status,
+                    access_token,
+                    info_message,
+                    store,
+                    created_at,
+                    updated_at
+                ) VALUES (
+                    :account_id,
+                    :application_id,
+                    :status,
+                    :access_token,
+                    :info_message,
+                    :store,
+                    :created_at,
+                    :updated_at
+                )
+                ON CONFLICT(account_id, application_id) DO UPDATE SET
+                    status = excluded.status,
+                    access_token = excluded.access_token,
+                    info_message = excluded.info_message,
+                    store = excluded.store,
+                    updated_at = excluded.updated_at'
+            );
+        }
 
-        $statement->execute([
+        $timestamp = gmdate('c');
+
+        $this->persistStatement->execute([
             ':account_id' => (string)$app->accountId,
             ':application_id' => (string)$app->appId,
             ':status' => (int)$app->status,
@@ -77,12 +85,14 @@ class AppInstanceSqliteRepository
 
     public function delete(string $appId, string $accountId): void
     {
-        $statement = $this->connection()->prepare(
-            'DELETE FROM account_application
-            WHERE application_id = :application_id AND account_id = :account_id'
-        );
+        if ($this->deleteStatement === null) {
+            $this->deleteStatement = $this->connection()->prepare(
+                'DELETE FROM account_application
+                WHERE application_id = :application_id AND account_id = :account_id'
+            );
+        }
 
-        $statement->execute([
+        $this->deleteStatement->execute([
             ':application_id' => $appId,
             ':account_id' => $accountId,
         ]);
@@ -129,11 +139,11 @@ class AppInstanceSqliteRepository
             'CREATE TABLE IF NOT EXISTS account_application (
                 account_id TEXT NOT NULL,
                 application_id TEXT NOT NULL,
-                status INTEGER,
+                status INTEGER, -- 0=UNKNOWN, 1=SETTINGS_REQUIRED, 100=ACTIVATED
                 access_token TEXT,
                 info_message TEXT,
                 store TEXT,
-                created_at TEXT NOT NULL,
+                created_at TEXT NOT NULL, -- ISO 8601, SQLite не имеет встроенного типа дата/время
                 updated_at TEXT NOT NULL,
                 PRIMARY KEY (account_id, application_id)
             )'
