@@ -485,6 +485,12 @@ class AppInstance
         appInstanceRepository()->delete($this->appId, $this->accountId);
     }
 
+    // Деактивирует решение, сохраняя настройки. Использовать при получении DELETE от Vendor API.
+    function suspend(): void
+    {
+        appInstanceRepository()->deactivate($this->appId, $this->accountId);
+    }
+
     static function loadApp($accountId): AppInstance
     {
         return self::load(cfg()->appId, $accountId);

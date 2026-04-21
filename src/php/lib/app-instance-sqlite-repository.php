@@ -6,6 +6,7 @@ class AppInstanceSqliteRepository
     private ?PDOStatement $loadStatement = null;
     private ?PDOStatement $persistStatement = null;
     private ?PDOStatement $deleteStatement = null;
+    private ?PDOStatement $deactivateStatement = null;
 
     public function load(string $appId, string $accountId): AppInstance
     {
@@ -95,6 +96,24 @@ class AppInstanceSqliteRepository
         $this->deleteStatement->execute([
             ':application_id' => $appId,
             ':account_id' => $accountId,
+        ]);
+    }
+
+    public function deactivate(string $appId, string $accountId): void
+    {
+        if ($this->deactivateStatement === null) {
+            $this->deactivateStatement = $this->connection()->prepare(
+                'UPDATE account_application
+                SET status = :status, updated_at = :updated_at
+                WHERE application_id = :application_id AND account_id = :account_id'
+            );
+        }
+
+        $this->deactivateStatement->execute([
+            ':status' => AppInstance::UNKNOWN,
+            ':application_id' => $appId,
+            ':account_id' => $accountId,
+            ':updated_at' => gmdate('c'),
         ]);
     }
 

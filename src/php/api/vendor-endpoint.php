@@ -76,9 +76,9 @@ switch ($method) {
     case 'DELETE':
         checkAppStatus($appId, $accountId, $app->getStatusName());
 
-        $app->delete();
+        $app->suspend();
 
-        log_message('INFO', "App appId=$appId deleted on accountId=$accountId");
+        log_message('INFO', "App appId=$appId suspended on accountId=$accountId");
 
         break;
 }
