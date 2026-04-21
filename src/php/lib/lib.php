@@ -372,6 +372,10 @@ class JsonApi
 
     function __construct(string $accessToken)
     {
+        if (empty($accessToken)) {
+            throw new RuntimeException('JsonApi requires a valid access token. Reinstall the application.');
+        }
+
         $this->accessToken = $accessToken;
     }
 

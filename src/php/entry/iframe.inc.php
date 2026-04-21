@@ -20,13 +20,17 @@ $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
 $storesValues = [];
 $isInstallStateMissing = empty($app->accessToken);
 
-if ($isAdmin && !$isInstallStateMissing) {
-    $stores = jsonApi()->stores();
+if ($isAdmin) {
+    try {
+        $stores = jsonApi()->stores();
 
-    if (!empty($stores->rows)) {
-        foreach ($stores->rows as $v) {
-            $storesValues[] = $v->name;
+        if (!empty($stores->rows)) {
+            foreach ($stores->rows as $v) {
+                $storesValues[] = $v->name;
+            }
         }
+    } catch (RuntimeException $e) {
+        log_message('WARN', "Cannot fetch stores: " . $e->getMessage());
     }
 }
 
