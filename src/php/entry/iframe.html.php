@@ -274,6 +274,12 @@
             <div class="status-title">
                 <?= $isSettingsRequired ? 'ТРЕБУЕТСЯ НАСТРОЙКА' : 'РЕШЕНИЕ ГОТОВО К РАБОТЕ' ?>
             </div>
+            <?php if ($isInstallStateMissing) { ?>
+                <p>
+                    В локальном хранилище нет `access_token` для этого приложения.
+                    После пересборки контейнера переустановите приложение, чтобы заново получить install callback.
+                </p>
+            <?php } ?>
             <?php if (!$isSettingsRequired) { ?>
                 <p>
                     Сообщение: <?= escHtml($infoMessage) ?><br>
@@ -284,7 +290,7 @@
     </section>
     <section class="panel">
         <h2>Форма настроек</h2>
-        <?php if ($isAdmin) { ?>
+        <?php if ($isAdmin && !$isInstallStateMissing) { ?>
             <form method="post" action="../utils/update-settings.php">
                 <div class="row field-row">
                     <label for="infoMessage">Укажите сообщение</label>
@@ -301,6 +307,8 @@
                 <input type="hidden" name="contextKey" value="<?= escHtml($contextKey) ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
+        <?php } elseif ($isAdmin) { ?>
+            <p class="muted">Сначала переустановите приложение, чтобы получить `access_token` и контекст для настроек.</p>
         <?php } else { ?>
             <p class="muted">Настройки доступны только администратору аккаунта</p>
         <?php } ?>

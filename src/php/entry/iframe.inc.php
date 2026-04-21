@@ -18,13 +18,20 @@ $infoMessage = $app->infoMessage;
 $store = $app->store;
 $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
 $storesValues = [];
+$isInstallStateMissing = empty($app->accessToken);
 
-if ($isAdmin) {
+if ($isAdmin && !$isInstallStateMissing) {
     $stores = jsonApi()->stores();
 
-    foreach ($stores->rows as $v) {
-        $storesValues[] = $v->name;
+    if (!empty($stores->rows)) {
+        foreach ($stores->rows as $v) {
+            $storesValues[] = $v->name;
+        }
     }
+}
+
+if ($isInstallStateMissing) {
+    log_message('WARN', "App appId={$app->appId} on accountId=$accountId has no access token in local storage");
 }
 
 require __DIR__ . '/iframe.html.php';
