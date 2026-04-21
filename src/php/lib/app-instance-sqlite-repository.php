@@ -30,7 +30,7 @@ class AppInstanceSqliteRepository
         }
 
         $app->status = isset($row['status']) ? (int)$row['status'] : AppInstance::UNKNOWN;
-        $app->accessToken = $row['access_token'] ?? null;
+        $app->accessToken = isset($row['access_token']) ? $this->decryptToken($row['access_token']) : null;
         $app->infoMessage = $row['info_message'] ?? null;
         $app->store = $row['store'] ?? null;
 
@@ -75,7 +75,7 @@ class AppInstanceSqliteRepository
             ':account_id' => (string)$app->accountId,
             ':application_id' => (string)$app->appId,
             ':status' => (int)$app->status,
-            ':access_token' => $this->normalizeNullableString($app->accessToken),
+            ':access_token' => $this->encryptToken($this->normalizeNullableString($app->accessToken)),
             ':info_message' => $this->normalizeNullableString($app->infoMessage),
             ':store' => $this->normalizeNullableString($app->store),
             ':created_at' => $timestamp,
@@ -159,6 +159,40 @@ class AppInstanceSqliteRepository
         $value = trim((string)$value);
 
         return $value === '' ? null : $value;
+    }
+
+    private function encryptToken(?string $token): ?string
+    {
+        if ($token === null) {
+            return null;
+        }
+
+        $key = substr(hash('sha256', cfg()->secretKey, true), 0, 32);
+        $iv = random_bytes(16);
+        $encrypted = openssl_encrypt($token, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
+        return base64_encode($iv . $encrypted);
+    }
+
+    private function decryptToken(?string $encrypted): ?string
+    {
+        if ($encrypted === null) {
+            return null;
+        }
+
+        $data = base64_decode($encrypted, true);
+
+        if ($data === false || strlen($data) <= 16) {
+            return null;
+        }
+
+        $key = substr(hash('sha256', cfg()->secretKey, true), 0, 32);
+        $iv = substr($data, 0, 16);
+        $ciphertext = substr($data, 16);
+
+        $result = openssl_decrypt($ciphertext, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+
+        return $result === false ? null : $result;
     }
 
     private function fail(string $message, ?Throwable $previous = null): void
