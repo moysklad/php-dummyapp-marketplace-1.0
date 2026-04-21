@@ -67,9 +67,9 @@ class AppInstanceSqliteRepository
             ':account_id' => (string)$app->accountId,
             ':application_id' => (string)$app->appId,
             ':status' => (int)$app->status,
-            ':access_token' => $this->normalizeNullableString($app->accessToken ?? null),
-            ':info_message' => $this->normalizeNullableString($app->infoMessage ?? null),
-            ':store' => $this->normalizeNullableString($app->store ?? null),
+            ':access_token' => $this->normalizeNullableString($app->accessToken),
+            ':info_message' => $this->normalizeNullableString($app->infoMessage),
+            ':store' => $this->normalizeNullableString($app->store),
             ':created_at' => $timestamp,
             ':updated_at' => $timestamp,
         ]);
@@ -105,7 +105,7 @@ class AppInstanceSqliteRepository
         $databasePath = appDatabasePath();
         $directory = dirname($databasePath);
 
-        if (!is_dir($directory) && !@mkdir($directory, 0777, true) && !is_dir($directory)) {
+        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
             $this->fail('Failed to create SQLite directory: ' . $directory);
         }
 
@@ -114,17 +114,17 @@ class AppInstanceSqliteRepository
             $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
             $this->initializeSchema($pdo);
+            $this->pdo = $pdo;
         } catch (Throwable $exception) {
             $this->fail('Failed to initialize SQLite storage: ' . $exception->getMessage(), $exception);
         }
-
-        $this->pdo = $pdo;
 
         return $this->pdo;
     }
 
     private function initializeSchema(PDO $pdo): void
     {
+        $pdo->exec('PRAGMA journal_mode=WAL');
         $pdo->exec(
             'CREATE TABLE IF NOT EXISTS account_application (
                 account_id TEXT NOT NULL,
@@ -140,7 +140,7 @@ class AppInstanceSqliteRepository
         );
     }
 
-    private function normalizeNullableString($value): ?string
+    private function normalizeNullableString(mixed $value): ?string
     {
         if ($value === null) {
             return null;
