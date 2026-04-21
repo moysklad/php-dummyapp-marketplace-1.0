@@ -107,7 +107,7 @@ Cookie сессии настроены в HTTPS-only режиме: `SameSite=Non
 * `utils/get-object.php`             - получение открытого объекта через JSON API (авторизация через сессию)
 * `api/button.php`                   - обработка нажатий кастомных кнопок
 * `lib/lib.php`                      - общие классы приложения (конфигурация, модели данных, врапперы доступа к API МоегоСклада)
-* `lib/app-instance-sqlite-repository.php` - SQLite repository для хранения установок приложения
+* `lib/app-repo.php`                 - SQLite repository для хранения установок приложения
 * `lib/jwt.lib.php`                  - JWT PHP библиотека (копипаст из https://github.com/firebase/php-jwt)
 * `lib/user-context-loader.inc.php`  - общий код получения контекста пользователя через Vendor API
 * `config.example.php`               - пример конфигурации (используйте как шаблон для `config.php`)

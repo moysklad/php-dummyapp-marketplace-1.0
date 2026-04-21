@@ -510,7 +510,7 @@ class AppInstance
     }
 }
 
-require_once __DIR__ . '/app-instance-sqlite-repository.php';
+require_once __DIR__ . '/app-repo.php';
 
 $appInstanceRepository = new AppInstanceSqliteRepository();
 
