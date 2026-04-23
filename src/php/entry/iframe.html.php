@@ -274,7 +274,7 @@
             <div class="status-title">
                 <?= $isSettingsRequired ? 'ТРЕБУЕТСЯ НАСТРОЙКА' : 'РЕШЕНИЕ ГОТОВО К РАБОТЕ' ?>
             </div>
-            <?php if ($isInstallStateMissing) { ?>
+            <?php if (empty($app->accessToken)) { ?>
                 <p>
                     В локальном хранилище нет `access_token` для этого приложения.
                     После пересборки контейнера переустановите приложение, чтобы заново получить install callback.
@@ -290,7 +290,7 @@
     </section>
     <section class="panel">
         <h2>Форма настроек</h2>
-        <?php if ($isAdmin && !$isInstallStateMissing) { ?>
+        <?php if ($isAdmin && !empty($app->accessToken)) { ?>
             <form method="post" action="../utils/update-settings.php">
                 <div class="row field-row">
                     <label for="infoMessage">Укажите сообщение</label>

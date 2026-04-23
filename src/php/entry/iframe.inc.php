@@ -18,7 +18,6 @@ $infoMessage = $app->infoMessage;
 $store = $app->store;
 $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
 $storesValues = [];
-$isInstallStateMissing = empty($app->accessToken);
 
 if ($isAdmin) {
     try {
@@ -34,7 +33,7 @@ if ($isAdmin) {
     }
 }
 
-if ($isInstallStateMissing) {
+if (empty($app->accessToken)) {
     log_message('WARN', "App appId={$app->appId} on accountId=$accountId has no access token in local storage");
 }
 
