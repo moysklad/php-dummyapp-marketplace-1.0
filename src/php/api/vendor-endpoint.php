@@ -76,9 +76,15 @@ switch ($method) {
     case 'DELETE':
         checkAppStatus($appId, $accountId, $app->getStatusName());
 
+        $requestBody = file_get_contents('php://input');
+        $data = json_decode($requestBody);
+        // cause: "Uninstall" — деактивация пользователем, "Partner" — деактивация партнёром
+        // https://dev.moysklad.ru/doc/api/vendor/1.0/#deaktiwaciq-resheniq-na-akkaunte
+        $cause = $data->cause ?? 'unknown';
+
         $app->suspend();
 
-        log_message('INFO', "App appId=$appId suspended on accountId=$accountId");
+        log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
 
         break;
 }
