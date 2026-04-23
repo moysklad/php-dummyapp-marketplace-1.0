@@ -307,9 +307,7 @@
                 <input type="hidden" name="contextKey" value="<?= escHtml($contextKey) ?>"/>
                 <button class="btn" type="submit">Сохранить</button>
             </form>
-        <?php } elseif ($isAdmin) { ?>
-            <p class="muted">Сначала переустановите приложение, чтобы получить `access_token` и контекст для настроек.</p>
-        <?php } else { ?>
+        <?php } elseif (!$isAdmin) { ?>
             <p class="muted">Настройки доступны только администратору аккаунта</p>
         <?php } ?>
     </section>
