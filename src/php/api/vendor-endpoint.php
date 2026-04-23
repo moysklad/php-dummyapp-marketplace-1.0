@@ -82,9 +82,13 @@ switch ($method) {
         // https://dev.moysklad.ru/doc/api/vendor/1.0/#deaktiwaciq-resheniq-na-akkaunte
         $cause = $data->cause ?? 'unknown';
 
-        $app->suspend();
-
-        log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
+        if ($cause === 'Partner') {
+            $app->delete();
+            log_message('INFO', "App appId=$appId deleted on accountId=$accountId, cause=$cause");
+        } else {
+            $app->suspend();
+            log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
+        }
 
         break;
 }
