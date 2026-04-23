@@ -104,13 +104,15 @@ class AppInstanceSqliteRepository
         if ($this->deactivateStatement === null) {
             $this->deactivateStatement = $this->connection()->prepare(
                 'UPDATE account_application
-                SET status = :status, updated_at = :updated_at
+                SET status = :status,
+                    access_token = NULL, -- при переустановке придёт новый токен через Vendor API
+                    updated_at = :updated_at
                 WHERE application_id = :application_id AND account_id = :account_id'
             );
         }
 
         $this->deactivateStatement->execute([
-            ':status' => AppInstance::UNKNOWN,
+            ':status' => AppInstance::SUSPENDED,
             ':application_id' => $appId,
             ':account_id' => $accountId,
             ':updated_at' => gmdate('c'),
@@ -158,7 +160,7 @@ class AppInstanceSqliteRepository
             'CREATE TABLE IF NOT EXISTS account_application (
                 account_id TEXT NOT NULL,
                 application_id TEXT NOT NULL,
-                status INTEGER, -- 0=UNKNOWN, 1=SETTINGS_REQUIRED, 100=ACTIVATED
+                status INTEGER, -- -1=SUSPENDED, 0=UNKNOWN, 1=SETTINGS_REQUIRED, 100=ACTIVATED
                 access_token TEXT,
                 info_message TEXT,
                 store TEXT,

@@ -438,6 +438,7 @@ $currentAppInstance = null;
 class AppInstance
 {
 
+    const SUSPENDED = -1;
     const UNKNOWN = 0;
     const SETTINGS_REQUIRED = 1;
     const ACTIVATED = 100;
