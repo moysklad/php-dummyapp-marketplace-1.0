@@ -13,6 +13,7 @@ class AppConfig
     public string $secretKey = '';
     public string $appBaseUrl = '';
     public string $databasePath = '';
+    public string $encryptKey = '';
 
     public string $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
     public string $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';

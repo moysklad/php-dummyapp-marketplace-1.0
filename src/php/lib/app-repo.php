@@ -186,11 +186,11 @@ class AppInstanceSqliteRepository
             return null;
         }
 
-        $key = substr(hash('sha256', cfg()->secretKey, true), 0, 32);
-        $iv = random_bytes(16);
-        $encrypted = openssl_encrypt($token, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+        $key = $this->encryptionKey();
+        $nonce = random_bytes(SODIUM_CRYPTO_SECRETBOX_NONCEBYTES);
+        $encrypted = sodium_crypto_secretbox($token, $nonce, $key);
 
-        return base64_encode($iv . $encrypted);
+        return base64_encode($nonce . $encrypted);
     }
 
     private function decryptToken(?string $encrypted): ?string
@@ -200,18 +200,34 @@ class AppInstanceSqliteRepository
         }
 
         $data = base64_decode($encrypted, true);
+        $nonceSize = SODIUM_CRYPTO_SECRETBOX_NONCEBYTES;
 
-        if ($data === false || strlen($data) <= 16) {
-            return null;
+        if ($data === false || strlen($data) <= $nonceSize) {
+            $this->fail('Corrupted access_token in storage. Reinstall the application.');
         }
 
-        $key = substr(hash('sha256', cfg()->secretKey, true), 0, 32);
-        $iv = substr($data, 0, 16);
-        $ciphertext = substr($data, 16);
+        $key = $this->encryptionKey();
+        $nonce = substr($data, 0, $nonceSize);
+        $ciphertext = substr($data, $nonceSize);
+        $result = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
 
-        $result = openssl_decrypt($ciphertext, 'AES-256-CBC', $key, OPENSSL_RAW_DATA, $iv);
+        if ($result === false) {
+            $this->fail('Failed to decrypt access_token: wrong key or corrupted data. Reinstall the application.');
+        }
 
-        return $result === false ? null : $result;
+        return $result;
+    }
+
+    private function encryptionKey(): string
+    {
+        $hexKey = cfg()->encryptKey;
+        $expectedLen = SODIUM_CRYPTO_SECRETBOX_KEYBYTES * 2; // 64 hex chars
+
+        if (strlen($hexKey) !== $expectedLen || !ctype_xdigit($hexKey)) {
+            $this->fail("APP_ENCRYPT_KEY must be {$expectedLen} hex chars. Generate: bin2hex(sodium_crypto_secretbox_keygen())");
+        }
+
+        return hex2bin($hexKey);
     }
 
     private function fail(string $message, ?Throwable $previous = null): void

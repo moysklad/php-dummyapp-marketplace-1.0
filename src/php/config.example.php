@@ -18,4 +18,5 @@ return [
     'appBaseUrl' => getenv('APP_BASE_URL'),  // 'https://php-demo.testms-test.lognex.ru'
     'secretKey' => getenv('APP_SECRET_KEY'), // 'nAbioPF2HAuYvrYpOikD3LYnNTzkYGugXqRT74hUGD47BeLEY7Zo7rHM4EK0wcj4oSAycrDpbVYhO44XdmKYtTEKzepbO4g6LzfYfU7c1ILRTfcGJOPpJTMkV8mwltJx'
     'databasePath' => getenv('APP_DB_PATH'), // '/var/www/html/src/php/data/app.sqlite'
+    'encryptKey' => getenv('APP_ENCRYPT_KEY'), // generate: bin2hex(sodium_crypto_secretbox_keygen())
 ];

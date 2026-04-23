@@ -37,6 +37,8 @@ ENV APP_UID=php-demo-app.moysklad
 ENV APP_BASE_URL=https://php-demo.testms-test.lognex.ru
 ENV APP_SECRET_KEY=secret-key-example
 ENV APP_DB_PATH=/var/www/html/src/php/data/app.sqlite
+# Ключ шифрования access token в БД. Сгенерировать: bin2hex(sodium_crypto_secretbox_keygen())
+ENV APP_ENCRYPT_KEY=0000000000000000000000000000000000000000000000000000000000000000
 
 # Порт, который будет слушать Apache
 EXPOSE 80
