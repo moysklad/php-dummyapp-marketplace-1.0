@@ -19,7 +19,11 @@ $store = $app->store;
 $isSettingsRequired = $app->status != AppInstance::ACTIVATED;
 $storesValues = [];
 
-if ($isAdmin) {
+if (empty($app->accessToken)) {
+    log_message('WARN', "App appId={$app->appId} on accountId=$accountId has no access token in local storage");
+}
+
+if ($isAdmin && !empty($app->accessToken)) {
     try {
         $stores = jsonApi()->stores();
 
@@ -31,10 +35,6 @@ if ($isAdmin) {
     } catch (RuntimeException $e) {
         log_message('WARN', "Cannot fetch stores: " . $e->getMessage());
     }
-}
-
-if (empty($app->accessToken)) {
-    log_message('WARN', "App appId={$app->appId} on accountId=$accountId has no access token in local storage");
 }
 
 require __DIR__ . '/iframe.html.php';
