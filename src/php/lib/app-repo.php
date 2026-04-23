@@ -160,7 +160,7 @@ class AppInstanceSqliteRepository
             'CREATE TABLE IF NOT EXISTS account_application (
                 account_id TEXT NOT NULL,
                 application_id TEXT NOT NULL,
-                status INTEGER, -- -1=SUSPENDED, 0=UNKNOWN, 1=SETTINGS_REQUIRED, 100=ACTIVATED
+                status INTEGER, -- 0=UNKNOWN, 1=SETTINGS_REQUIRED, 2=SUSPENDED, 100=ACTIVATED
                 access_token TEXT,
                 info_message TEXT,
                 store TEXT,

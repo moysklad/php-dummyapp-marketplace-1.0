@@ -438,9 +438,9 @@ $currentAppInstance = null;
 class AppInstance
 {
 
-    const SUSPENDED = -1;
     const UNKNOWN = 0;
     const SETTINGS_REQUIRED = 1;
+    const SUSPENDED = 2;
     const ACTIVATED = 100;
 
     var $appId;
