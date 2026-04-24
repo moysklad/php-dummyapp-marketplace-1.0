@@ -1,3 +1,8 @@
+<?php
+/** @var string $uid */
+/** @var string $fio */
+/** @var string $getObjectUrl */
+?>
 <!doctype html>
 <html lang="ru">
 <head>
