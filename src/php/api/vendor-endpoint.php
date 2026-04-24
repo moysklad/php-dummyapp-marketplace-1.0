@@ -107,11 +107,11 @@ switch ($method) {
 
         $requestBody = file_get_contents('php://input');
         $data = json_decode($requestBody);
-        // cause: "Uninstall" — деактивация пользователем, "Partner" — деактивация партнёром
+        // cause: "Uninstall" — удаление решения пользователем, "Suspend" — временная приостановка (только платные решения)
         // https://dev.moysklad.ru/doc/api/vendor/1.0/#deaktiwaciq-resheniq-na-akkaunte
         $cause = is_object($data) ? ($data->cause ?? 'unknown') : 'unknown';
 
-        if ($cause === 'Partner') {
+        if ($cause === 'Uninstall') {
             $app->delete();
             log_message('INFO', "App appId=$appId deleted on accountId=$accountId, cause=$cause");
         } else {
