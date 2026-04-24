@@ -107,19 +107,25 @@ switch ($method) {
 
         $requestBody = file_get_contents('php://input');
         $data = json_decode($requestBody);
-        // cause: "Uninstall" — удаление решения пользователем, "Suspend" — временная приостановка (только платные решения)
-        // https://dev.moysklad.ru/doc/api/vendor/1.0/#deaktiwaciq-resheniq-na-akkaunte
-        $cause = is_object($data) ? ($data->cause ?? 'unknown') : 'unknown';
+        $cause = is_object($data) ? ($data->cause ?? null) : null;
 
-        if ($cause === 'Uninstall') {
-            $app->delete();
-            log_message('INFO', "App appId=$appId deleted on accountId=$accountId, cause=$cause");
-        } else {
-            $app->suspend();
-            log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
+        switch ($cause) {
+            case 'Uninstall':
+                $app->delete();
+                log_message('INFO', "App appId=$appId deleted on accountId=$accountId, cause=$cause");
+
+                break;
+            case 'Suspend':
+                $app->suspend();
+                log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
+
+                break;
+            default:
+                log_message('WARN', "Unsupported delete cause for appId=$appId on accountId=$accountId, cause=$cause");
+                http_response_code(400);
+
+                break;
         }
-
-        break;
 }
 
 function checkAppStatus(string $appId, string $accountId, ?string $status): void
