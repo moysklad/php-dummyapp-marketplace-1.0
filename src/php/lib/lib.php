@@ -194,7 +194,7 @@ function resolveBackendContextFromSession(): ?array
     return [
         'accountId' => $accountId,
         'uid' => $uid,
-        'isAdmin' => $context['isAdmin'],
+        'isAdmin' => normalizeIsAdmin($context['isAdmin'] ?? false),
     ];
 }
 
@@ -255,19 +255,19 @@ function trimUserContextBucket(array &$bucket): void
 class VendorApi
 {
 
-    function context(string $contextKey)
+    function context(string $contextKey): mixed
     {
         return $this->request('POST', '/context/' . $contextKey);
     }
 
-    function updateAppStatus(string $appId, string $accountId, string $status)
+    function updateAppStatus(string $appId, string $accountId, string $status): mixed
     {
         return $this->request('PUT',
             "/apps/$appId/$accountId/status",
             "{\"status\": \"$status\"}");
     }
 
-    private function request(string $method, $path, $body = null)
+    private function request(string $method, string $path, mixed $body = null): mixed
     {
         return makeHttpRequest(
             $method,
@@ -277,7 +277,7 @@ class VendorApi
     }
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null)
+function makeHttpRequest(string $method, string $url, string $bearerToken, mixed $data = null): mixed
 {
     $curl = curl_init($url);
 
@@ -369,7 +369,7 @@ function buildJWT(): string
 class JsonApi
 {
 
-    private $accessToken;
+    private string $accessToken;
 
     function __construct(string $accessToken)
     {
@@ -380,7 +380,7 @@ class JsonApi
         $this->accessToken = $accessToken;
     }
 
-    function stores()
+    function stores(): mixed
     {
         return makeHttpRequest(
             'GET',
@@ -388,7 +388,7 @@ class JsonApi
             $this->accessToken);
     }
 
-    function getObject($entity, $objectId)
+    function getObject(string $entity, string $objectId): mixed
     {
         return makeHttpRequest(
             'GET',
@@ -401,7 +401,7 @@ class JsonApi
 function jsonApi(): JsonApi
 {
     if (empty($GLOBALS['jsonApi'])) {
-        $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
+        $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken ?? '');
     }
 
     return $GLOBALS['jsonApi'];
@@ -416,7 +416,7 @@ const LOG_LEVELS = [
     'ERROR' => 4
 ];
 
-function log_message($level, $message)
+function log_message(string $level, string $message): void
 {
     if (LOG_LEVELS[$level] >= LOG_LEVELS[LOG_LEVEL]) {
         $log_entry = sprintf(
@@ -443,14 +443,14 @@ class AppInstance
     const SUSPENDED = 2;
     const ACTIVATED = 100;
 
-    var $appId;
-    var $accountId;
-    var $infoMessage;
-    var $store;
+    public string $appId;
+    public string $accountId;
+    public ?string $infoMessage = null;
+    public ?string $store = null;
 
-    var $accessToken;
+    public ?string $accessToken = null;
 
-    var $status = AppInstance::UNKNOWN;
+    public int $status = AppInstance::UNKNOWN;
 
     static function get(): AppInstance
     {
@@ -463,30 +463,27 @@ class AppInstance
         return $app;
     }
 
-    public function __construct($appId, $accountId)
+    public function __construct(string $appId, string $accountId)
     {
         $this->appId = $appId;
         $this->accountId = $accountId;
     }
 
-    function getStatusName()
+    function getStatusName(): ?string
     {
-        switch ($this->status) {
-            case self::SETTINGS_REQUIRED:
-                return 'SettingsRequired';
-            case self::ACTIVATED:
-                return 'Activated';
-        }
-
-        return null;
+        return match ($this->status) {
+            self::SETTINGS_REQUIRED => 'SettingsRequired',
+            self::ACTIVATED => 'Activated',
+            default => null,
+        };
     }
 
-    function persist()
+    function persist(): void
     {
         appInstanceRepository()->persist($this);
     }
 
-    function delete()
+    function delete(): void
     {
         appInstanceRepository()->delete($this->appId, $this->accountId);
     }
@@ -497,12 +494,12 @@ class AppInstance
         appInstanceRepository()->deactivate($this->appId, $this->accountId);
     }
 
-    static function loadApp($accountId): AppInstance
+    static function loadApp(string $accountId): AppInstance
     {
         return self::load(cfg()->appId, $accountId);
     }
 
-    static function load($appId, $accountId): AppInstance
+    static function load(string $appId, string $accountId): AppInstance
     {
         $app = appInstanceRepository()->load($appId, $accountId);
 

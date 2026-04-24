@@ -2,23 +2,25 @@
 
 require_once __DIR__ . '/../lib/lib.php';
 
-function processDocumentButtonClick(string $buttonName, string $extensionPoint, string $objectId, $user): array
+function processDocumentButtonClick(string $buttonName, string $extensionPoint, string $objectId, mixed $user): array
 {
-    if ($buttonName == 'show-notification') {
+    $role = is_object($user) ? ($user->role ?? 'unknown') : 'unknown';
+
+    if ($buttonName === 'show-notification') {
         return [
             'action' => 'showNotification',
             'params' => [
-                'text' => "Кнопка нажата в '$extensionPoint' для объекта с ИД '$objectId' пользователем с ролью $user->role"
+                'text' => "Кнопка нажата в '$extensionPoint' для объекта с ИД '$objectId' пользователем с ролью $role"
             ]
         ];
-    } elseif ($buttonName == 'navigate-to') {
+    } elseif ($buttonName === 'navigate-to') {
         return [
             'action' => 'navigateTo',
             'params' => [
                 'url' => 'https://api.whatsapp.com/send/?phone=%2B79127775533'
             ]
         ];
-    } elseif ($buttonName == 'show-popup') {
+    } elseif ($buttonName === 'show-popup') {
         return [
             'action' => 'showPopup',
             'params' => [
@@ -31,19 +33,21 @@ function processDocumentButtonClick(string $buttonName, string $extensionPoint, 
     return [];
 }
 
-function processListButtonClick(string $buttonName, string $extensionPoint, $objects): array
+function processListButtonClick(string $buttonName, string $extensionPoint, iterable $objects): array
 {
-    if ($buttonName == 'show-notification') {
-        $items = '';
+    if ($buttonName === 'show-notification') {
+        $items = [];
 
         foreach ($objects as $item) {
-            $items .= "'$item->id', ";
+            if (is_object($item) && isset($item->id)) {
+                $items[] = "'$item->id'";
+            }
         }
 
         return [
             'action' => 'showNotification',
             'params' => [
-                'text' => "Кнопка нажата в '$extensionPoint' для объектов $items"
+                'text' => "Кнопка нажата в '$extensionPoint' для объектов " . implode(', ', $items)
             ]
         ];
     }

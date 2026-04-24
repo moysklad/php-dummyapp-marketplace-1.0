@@ -7,9 +7,9 @@ require_once __DIR__ . '/../lib/jwt.lib.php';
 
 require_once __DIR__ . '/button.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$path = $_SERVER['PATH_INFO'];
-$headers = apache_request_headers();
+$method = (string)($_SERVER['REQUEST_METHOD'] ?? '');
+$path = (string)($_SERVER['PATH_INFO'] ?? '');
+$headers = apache_request_headers() ?: [];
 
 log_message('DEBUG', "Received: method=$method, path=$path, headers=" . print_r($headers, true));
 
@@ -18,9 +18,14 @@ if (!authTokenIsValid($headers)) {
     exit(0);
 }
 
-$path = str_ireplace('/api/moysklad/vendor/1.0/apps/', '', $path);
+$path = trim(str_ireplace('/api/moysklad/vendor/1.0/apps/', '', $path), '/');
 $pp = explode('/', $path);
-$n = count($pp);
+
+if (($pp[0] ?? '') === '' || ($pp[1] ?? '') === '') {
+    http_response_code(404);
+    exit('Invalid Vendor API path');
+}
+
 $appId = $pp[0];
 $accountId = $pp[1];
 
@@ -35,8 +40,18 @@ switch ($method) {
         log_message('DEBUG', "Request body: " . print_r($requestBody, true));
 
         $data = json_decode($requestBody);
-        $appUid = $data->appUid;
-        $accessToken = $data->access[0]->access_token;
+
+        if (!is_object($data) || empty($data->access[0]->access_token)) {
+            http_response_code(400);
+            exit('Invalid install request');
+        }
+
+        if (cfg()->appUid !== '' && ($data->appUid ?? '') !== cfg()->appUid) {
+            http_response_code(400);
+            exit('Invalid appUid');
+        }
+
+        $accessToken = (string)$data->access[0]->access_token;
 
         if (!$app->getStatusName()) {
             $app->accessToken = $accessToken;
@@ -49,22 +64,36 @@ switch ($method) {
         break;
     case 'POST':
         // Обработка нажатий на кастомные кнопки
-        if ($pp[2] == 'button') {
+        if (($pp[2] ?? '') === 'button') {
             $requestBody = file_get_contents('php://input');
 
             log_message('DEBUG', "Request body: " . print_r($requestBody, true));
 
             $data = json_decode($requestBody);
 
+            if (!is_object($data)) {
+                http_response_code(400);
+                exit('Invalid button request');
+            }
+
             header("Content-Type: application/json");
 
             if (!empty($data->objectId)) {
-                echo json_encode(processDocumentButtonClick($data->buttonName, $data->extensionPoint, $data->objectId, $data->user));
-            } elseif (!empty($data->selected)) {
-                echo json_encode(processListButtonClick($data->buttonName, $data->extensionPoint, $data->selected));
+                echo json_encode(processDocumentButtonClick(
+                    (string)($data->buttonName ?? ''),
+                    (string)($data->extensionPoint ?? ''),
+                    (string)$data->objectId,
+                    $data->user ?? null
+                ));
+            } elseif (!empty($data->selected) && is_iterable($data->selected)) {
+                echo json_encode(processListButtonClick(
+                    (string)($data->buttonName ?? ''),
+                    (string)($data->extensionPoint ?? ''),
+                    $data->selected
+                ));
             }
 
-            log_message('INFO', "Button processed for appId=$appId on accountId=$accountId by user=" . print_r($data->user, true));
+            log_message('INFO', "Button processed for appId=$appId on accountId=$accountId by user=" . print_r($data->user ?? null, true));
         }
 
         break;
@@ -80,7 +109,7 @@ switch ($method) {
         $data = json_decode($requestBody);
         // cause: "Uninstall" — деактивация пользователем, "Partner" — деактивация партнёром
         // https://dev.moysklad.ru/doc/api/vendor/1.0/#deaktiwaciq-resheniq-na-akkaunte
-        $cause = $data->cause ?? 'unknown';
+        $cause = is_object($data) ? ($data->cause ?? 'unknown') : 'unknown';
 
         if ($cause === 'Partner') {
             $app->delete();
@@ -93,7 +122,7 @@ switch ($method) {
         break;
 }
 
-function checkAppStatus($appId, $accountId, $status)
+function checkAppStatus(string $appId, string $accountId, ?string $status): void
 {
     if (!$status) {
         log_message('INFO', "App appId=$appId not installed on accountId=$accountId");
@@ -103,15 +132,15 @@ function checkAppStatus($appId, $accountId, $status)
     }
 }
 
-function replyStatus($appId, $accountId, $status)
+function replyStatus(string $appId, string $accountId, ?string $status): void
 {
     log_message('INFO', "App appId=$appId installed on accountId=$accountId. Status: " . $status);
     header("Content-Type: application/json");
 
-    echo '{"status": "' . $status . '"}';
+    echo json_encode(['status' => $status]);
 }
 
-function authTokenIsValid($headers): bool
+function authTokenIsValid(array $headers): bool
 {
     $auth = $headers['Authorization'] ?? $headers['authorization'] ?? null;
 
@@ -122,12 +151,12 @@ function authTokenIsValid($headers): bool
 
     $bearer = "Bearer ";
 
-    if (substr($auth, 0, 7) != $bearer) {
+    if (!str_starts_with($auth, $bearer)) {
         log_message('WARN', "Invalid auth token: $auth");
         return false;
     }
 
-    $jwtToken = str_replace($bearer, "", $auth);
+    $jwtToken = substr($auth, strlen($bearer));
     $secretKey = cfg()->secretKey;
 
     if (empty($secretKey)) {
