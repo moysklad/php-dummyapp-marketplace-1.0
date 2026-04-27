@@ -41,7 +41,7 @@ switch ($method) {
 
         $data = json_decode($requestBody);
 
-        if (!is_object($data) || empty($data->access[0]->access_token)) {
+        if (!is_object($data)) {
             http_response_code(400);
             exit('Invalid install request');
         }
@@ -51,12 +51,15 @@ switch ($method) {
             exit('Invalid appUid');
         }
 
-        $accessToken = (string)$data->access[0]->access_token;
+        // cause=Install содержит access token; cause=TariffChanged и другие уведомления — нет
+        if (!empty($data->access[0]->access_token)) {
+            $accessToken = (string)$data->access[0]->access_token;
 
-        if (!$app->getStatusName()) {
-            $app->accessToken = $accessToken;
-            $app->status = AppInstance::SETTINGS_REQUIRED;
-            $app->persist();
+            if (!$app->getStatusName()) {
+                $app->accessToken = $accessToken;
+                $app->status = AppInstance::SETTINGS_REQUIRED;
+                $app->persist();
+            }
         }
 
         replyStatus($appId, $accountId, $app->getStatusName());
