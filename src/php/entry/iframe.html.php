@@ -306,13 +306,16 @@
             <form method="post" action="../utils/update-settings.php">
                 <div class="row field-row">
                     <label for="infoMessage">Укажите сообщение</label>
-                    <input id="infoMessage" type="text" name="infoMessage">
+                    <input id="infoMessage" type="text" name="infoMessage" value="<?= escHtml($infoMessage ?? '') ?>">
                 </div>
                 <div class="row field-row">
                     <label for="store">Выберите склад</label>
                     <select id="store" name="store">
+                        <?php if (!empty($store) && !in_array($store, $storesValues, true)) { ?>
+                            <option value="<?= escHtml($store) ?>" selected><?= escHtml($store) ?></option>
+                        <?php } ?>
                         <?php foreach ($storesValues as $v) { ?>
-                            <option value="<?= escHtml($v) ?>"><?= escHtml($v) ?></option>
+                            <option value="<?= escHtml($v) ?>" <?= $v === $store ? 'selected' : '' ?>><?= escHtml($v) ?></option>
                         <?php } ?>
                     </select>
                 </div>
