@@ -1,15 +1,3 @@
-<?php
-/** @var string $uid */
-/** @var string $fio */
-/** @var string $accountId */
-/** @var bool $isAdmin */
-/** @var string $contextKey */
-/** @var AppInstance $app */
-/** @var bool $isSettingsRequired */
-/** @var list<string> $storesValues */
-/** @var string|null $infoMessage */
-/** @var string|null $store */
-?>
 <!doctype html>
 <html lang="ru">
 <head>

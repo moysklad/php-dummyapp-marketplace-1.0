@@ -53,30 +53,23 @@ switch ($method) {
 
         $cause = (string)($data->cause ?? '');
         $hasRequiredSettings = trim($app->store ?? '') !== '';
-        $shouldPersist = false;
 
         // cause=Install и cause=Resume содержат access token; cause=TariffChanged и Autoprolongation — нет
         if (!empty($data->access[0]->access_token)) {
             $app->accessToken = (string)$data->access[0]->access_token;
-            $shouldPersist = true;
         }
 
         if ($cause === 'Resume') {
             $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
-            $shouldPersist = true;
         } elseif (in_array($cause, ['TariffChanged', 'Autoprolongation'], true)) {
             if ($hasRequiredSettings) {
                 $app->status = AppInstance::ACTIVATED;
-                $shouldPersist = true;
             }
         } elseif (!$app->getStatusName()) {
             $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
-            $shouldPersist = true;
         }
 
-        if ($shouldPersist) {
-            $app->persist();
-        }
+        $app->persist();
 
         replyStatus($appId, $accountId, $app->getStatusName());
 
