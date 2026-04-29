@@ -1,9 +1,9 @@
 <?php
 
-class AppInstanceSqliteRepository
-{
-    private ?PDO $pdo = null;
+require_once __DIR__ . '/repo.php';
 
+class AppInstanceSqliteRepository extends SqliteRepository
+{
     public function load(string $appId, string $accountId): AppInstance
     {
         $stmt = $this->connection()->prepare(
@@ -107,49 +107,7 @@ class AppInstanceSqliteRepository
         ]);
     }
 
-    private function connection(): PDO
-    {
-        if ($this->pdo instanceof PDO) {
-            return $this->pdo;
-        }
-
-        if (!class_exists('PDO')) {
-            $message = 'PDO extension is required for application storage';
-            log_message('ERROR', $message);
-            throw new RuntimeException($message);
-        }
-
-        if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-            $message = 'pdo_sqlite extension is required for application storage';
-            log_message('ERROR', $message);
-            throw new RuntimeException($message);
-        }
-
-        $databasePath = appDatabasePath();
-        $directory = dirname($databasePath);
-
-        if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
-            $message = 'Failed to create SQLite directory: ' . $directory;
-            log_message('ERROR', $message);
-            throw new RuntimeException($message);
-        }
-
-        try {
-            $pdo = new PDO('sqlite:' . $databasePath);
-            $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-            $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
-            $this->initializeSchema($pdo);
-            $this->pdo = $pdo;
-        } catch (Throwable $exception) {
-            $message = 'Failed to initialize SQLite storage: ' . $exception->getMessage();
-            log_message('ERROR', $message);
-            throw new RuntimeException($message, 0, $exception);
-        }
-
-        return $this->pdo;
-    }
-
-    private function initializeSchema(PDO $pdo): void
+    protected function initializeSchema(PDO $pdo): void
     {
         $pdo->exec('PRAGMA journal_mode=WAL');
         $pdo->exec(
@@ -165,6 +123,11 @@ class AppInstanceSqliteRepository
                 PRIMARY KEY (account_id, application_id)
             )'
         );
+    }
+
+    protected function extensionDescription(): string
+    {
+        return 'application storage';
     }
 
     private function normalizeNullableString(mixed $value): ?string

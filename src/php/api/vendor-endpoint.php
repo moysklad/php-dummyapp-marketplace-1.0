@@ -184,14 +184,23 @@ function authTokenIsValid(array $headers): bool
     try {
         $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
 
+        if (empty($decoded->exp)) {
+            log_message('WARN', "EXP is not set");
+            return false;
+        }
+
         if (empty($decoded->jti)) {
             log_message('WARN', "JTI is not set");
             return false;
         }
 
-        // jti - является уникальным идентификатором токена.
-        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
-        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
+        $jti = (string)$decoded->jti;
+
+        if (!jwtRepository()->register($jti)) {
+            log_message('WARN', "JTI already used: $jti");
+            return false;
+        }
+
         return true;
     } catch (Exception $exception) {
         log_message('WARN', $exception->getMessage());
