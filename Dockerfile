@@ -19,6 +19,11 @@ RUN docker-php-ext-install zip opcache curl pdo_sqlite
 # Копируем файлы приложения
 COPY . /var/www/html/
 
+# Создаём config.php из примера если его нет в контексте сборки
+RUN if [ ! -f /var/www/html/src/php/config.php ]; then \
+        cp /var/www/html/src/php/config.example.php /var/www/html/src/php/config.php; \
+    fi
+
 # Настраиваем права
 RUN chown -R www-data:www-data /var/www/html \
     && find /var/www/html -type d -exec chmod 755 {} \; \

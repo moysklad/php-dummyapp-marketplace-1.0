@@ -51,16 +51,23 @@ switch ($method) {
             exit('Invalid appUid');
         }
 
-        // cause=Install содержит access token; cause=TariffChanged и другие уведомления — нет
-        if (!empty($data->access[0]->access_token)) {
-            $accessToken = (string)$data->access[0]->access_token;
+        $cause = (string)($data->cause ?? '');
+        $hasRequiredSettings = trim($app->store ?? '') !== '';
 
-            if (!$app->getStatusName()) {
-                $app->accessToken = $accessToken;
-                $app->status = AppInstance::SETTINGS_REQUIRED;
-                $app->persist();
-            }
+        // cause=Install и cause=Resume содержат access token; cause=TariffChanged и Autoprolongation — нет
+        if (!empty($data->access[0]->access_token)) {
+            $app->accessToken = (string)$data->access[0]->access_token;
         }
+
+        if ($cause === 'Resume') {
+            $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
+        } elseif (in_array($cause, ['TariffChanged', 'Autoprolongation'], true)) {
+            // Смена тарифа не требует обновления — tariffId в БД не хранится, статус уже Activated
+        } elseif (!$app->getStatusName()) {
+            $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
+        }
+
+        $app->persist();
 
         replyStatus($appId, $accountId, $app->getStatusName());
 

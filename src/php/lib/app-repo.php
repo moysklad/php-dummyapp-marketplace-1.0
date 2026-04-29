@@ -3,27 +3,21 @@
 class AppInstanceSqliteRepository
 {
     private ?PDO $pdo = null;
-    private ?PDOStatement $loadStatement = null;
-    private ?PDOStatement $persistStatement = null;
-    private ?PDOStatement $deleteStatement = null;
-    private ?PDOStatement $deactivateStatement = null;
 
     public function load(string $appId, string $accountId): AppInstance
     {
-        if ($this->loadStatement === null) {
-            $this->loadStatement = $this->connection()->prepare(
-                'SELECT status, access_token, info_message, store
-                FROM account_application
-                WHERE application_id = :application_id AND account_id = :account_id'
-            );
-        }
+        $stmt = $this->connection()->prepare(
+            'SELECT status, access_token, info_message, store
+            FROM account_application
+            WHERE application_id = :application_id AND account_id = :account_id'
+        );
 
-        $this->loadStatement->execute([
+        $stmt->execute([
             ':application_id' => $appId,
             ':account_id' => $accountId,
         ]);
 
-        $row = $this->loadStatement->fetch(PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
         $app = new AppInstance($appId, $accountId);
 
         if ($row === false) {
@@ -40,39 +34,37 @@ class AppInstanceSqliteRepository
 
     public function persist(AppInstance $app): void
     {
-        if ($this->persistStatement === null) {
-            $this->persistStatement = $this->connection()->prepare(
-                'INSERT INTO account_application (
-                    account_id,
-                    application_id,
-                    status,
-                    access_token,
-                    info_message,
-                    store,
-                    created_at,
-                    updated_at
-                ) VALUES (
-                    :account_id,
-                    :application_id,
-                    :status,
-                    :access_token,
-                    :info_message,
-                    :store,
-                    :created_at,
-                    :updated_at
-                )
-                ON CONFLICT(account_id, application_id) DO UPDATE SET
-                    status = excluded.status,
-                    access_token = excluded.access_token,
-                    info_message = excluded.info_message,
-                    store = excluded.store,
-                    updated_at = excluded.updated_at'
-            );
-        }
+        $stmt = $this->connection()->prepare(
+            'INSERT INTO account_application (
+                account_id,
+                application_id,
+                status,
+                access_token,
+                info_message,
+                store,
+                created_at,
+                updated_at
+            ) VALUES (
+                :account_id,
+                :application_id,
+                :status,
+                :access_token,
+                :info_message,
+                :store,
+                :created_at,
+                :updated_at
+            )
+            ON CONFLICT(account_id, application_id) DO UPDATE SET
+                status = excluded.status,
+                access_token = excluded.access_token,
+                info_message = excluded.info_message,
+                store = excluded.store,
+                updated_at = excluded.updated_at'
+        );
 
         $timestamp = gmdate('c');
 
-        $this->persistStatement->execute([
+        $stmt->execute([
             ':account_id' => (string)$app->accountId,
             ':application_id' => (string)$app->appId,
             ':status' => (int)$app->status,
@@ -86,14 +78,12 @@ class AppInstanceSqliteRepository
 
     public function delete(string $appId, string $accountId): void
     {
-        if ($this->deleteStatement === null) {
-            $this->deleteStatement = $this->connection()->prepare(
-                'DELETE FROM account_application
-                WHERE application_id = :application_id AND account_id = :account_id'
-            );
-        }
+        $stmt = $this->connection()->prepare(
+            'DELETE FROM account_application
+            WHERE application_id = :application_id AND account_id = :account_id'
+        );
 
-        $this->deleteStatement->execute([
+        $stmt->execute([
             ':application_id' => $appId,
             ':account_id' => $accountId,
         ]);
@@ -101,17 +91,15 @@ class AppInstanceSqliteRepository
 
     public function deactivate(string $appId, string $accountId): void
     {
-        if ($this->deactivateStatement === null) {
-            $this->deactivateStatement = $this->connection()->prepare(
-                'UPDATE account_application
-                SET status = :status,
-                    access_token = NULL, -- при переустановке придёт новый токен через Vendor API
-                    updated_at = :updated_at
-                WHERE application_id = :application_id AND account_id = :account_id'
-            );
-        }
+        $stmt = $this->connection()->prepare(
+            'UPDATE account_application
+            SET status = :status,
+                access_token = NULL, -- при переустановке придёт новый токен через Vendor API
+                updated_at = :updated_at
+            WHERE application_id = :application_id AND account_id = :account_id'
+        );
 
-        $this->deactivateStatement->execute([
+        $stmt->execute([
             ':status' => AppInstance::SUSPENDED,
             ':application_id' => $appId,
             ':account_id' => $accountId,
@@ -126,18 +114,24 @@ class AppInstanceSqliteRepository
         }
 
         if (!class_exists('PDO')) {
-            $this->fail('PDO extension is required for application storage');
+            $message = 'PDO extension is required for application storage';
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         if (!in_array('sqlite', PDO::getAvailableDrivers(), true)) {
-            $this->fail('pdo_sqlite extension is required for application storage');
+            $message = 'pdo_sqlite extension is required for application storage';
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         $databasePath = appDatabasePath();
         $directory = dirname($databasePath);
 
         if (!is_dir($directory) && !@mkdir($directory, 0755, true) && !is_dir($directory)) {
-            $this->fail('Failed to create SQLite directory: ' . $directory);
+            $message = 'Failed to create SQLite directory: ' . $directory;
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         try {
@@ -147,7 +141,9 @@ class AppInstanceSqliteRepository
             $this->initializeSchema($pdo);
             $this->pdo = $pdo;
         } catch (Throwable $exception) {
-            $this->fail('Failed to initialize SQLite storage: ' . $exception->getMessage(), $exception);
+            $message = 'Failed to initialize SQLite storage: ' . $exception->getMessage();
+            log_message('ERROR', $message);
+            throw new RuntimeException($message, 0, $exception);
         }
 
         return $this->pdo;
@@ -205,7 +201,9 @@ class AppInstanceSqliteRepository
         $nonceSize = SODIUM_CRYPTO_SECRETBOX_NONCEBYTES;
 
         if ($data === false || strlen($data) <= $nonceSize) {
-            $this->fail('Corrupted access_token in storage. Reinstall the application.');
+            $message = 'Corrupted access_token in storage. Reinstall the application.';
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         $key = $this->encryptionKey();
@@ -214,7 +212,9 @@ class AppInstanceSqliteRepository
         $result = sodium_crypto_secretbox_open($ciphertext, $nonce, $key);
 
         if ($result === false) {
-            $this->fail('Failed to decrypt access_token: wrong key or corrupted data. Reinstall the application.');
+            $message = 'Failed to decrypt access_token: wrong key or corrupted data. Reinstall the application.';
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         return $result;
@@ -226,16 +226,11 @@ class AppInstanceSqliteRepository
         $expectedLen = SODIUM_CRYPTO_SECRETBOX_KEYBYTES * 2; // 64 hex chars
 
         if (strlen($hexKey) !== $expectedLen || !ctype_xdigit($hexKey)) {
-            $this->fail("APP_ENCRYPT_KEY must be {$expectedLen} hex chars. Generate: bin2hex(sodium_crypto_secretbox_keygen())");
+            $message = "APP_ENCRYPT_KEY must be {$expectedLen} hex chars. Generate: bin2hex(sodium_crypto_secretbox_keygen())";
+            log_message('ERROR', $message);
+            throw new RuntimeException($message);
         }
 
         return hex2bin($hexKey);
-    }
-
-    private function fail(string $message, ?Throwable $previous = null): void
-    {
-        log_message('ERROR', $message);
-
-        throw new RuntimeException($message, 0, $previous);
     }
 }
