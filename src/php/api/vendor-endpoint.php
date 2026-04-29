@@ -62,9 +62,7 @@ switch ($method) {
         if ($cause === 'Resume') {
             $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
         } elseif (in_array($cause, ['TariffChanged', 'Autoprolongation'], true)) {
-            if ($hasRequiredSettings) {
-                $app->status = AppInstance::ACTIVATED;
-            }
+            // Смена тарифа не требует обновления — tariffId в БД не хранится, статус уже Activated
         } elseif (!$app->getStatusName()) {
             $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
         }
