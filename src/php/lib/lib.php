@@ -510,10 +510,17 @@ class AppInstance
 }
 
 require_once __DIR__ . '/app-repo.php';
+require_once __DIR__ . '/jwt-repo.php';
 
 $appInstanceRepository = new AppInstanceSqliteRepository();
+$jwtRepository = new JwtSqliteRepository();
 
 function appInstanceRepository(): AppInstanceSqliteRepository
 {
     return $GLOBALS['appInstanceRepository'];
+}
+
+function jwtRepository(): JwtSqliteRepository
+{
+    return $GLOBALS['jwtRepository'];
 }
