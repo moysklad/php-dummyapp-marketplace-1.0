@@ -7,7 +7,8 @@ class JwtSqliteRepository extends SqliteRepository
     // Время хранения старых записей в таблице: 24 часа
     private const JTI_TTL_SECONDS = 86400;
 
-    // Вероятность запуска очистки (на production лучше установить <= 5)
+    // Вероятность запуска очистки
+    // На production лучше установить <= 5, либо вообще запускать через crone
     private const DELETE_EXPIRED_CHANCE_PERCENT = 50;
 
     public function register(string $jti): bool

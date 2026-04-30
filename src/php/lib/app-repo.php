@@ -125,11 +125,6 @@ class AppInstanceSqliteRepository extends SqliteRepository
         );
     }
 
-    protected function extensionDescription(): string
-    {
-        return 'application storage';
-    }
-
     private function normalizeNullableString(mixed $value): ?string
     {
         if ($value === null) {
