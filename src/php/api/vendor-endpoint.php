@@ -7,9 +7,9 @@ require_once __DIR__ . '/../lib/jwt.lib.php';
 
 require_once __DIR__ . '/button.php';
 
-$method = $_SERVER['REQUEST_METHOD'];
-$path = $_SERVER['PATH_INFO'];
-$headers = apache_request_headers();
+$method = (string)($_SERVER['REQUEST_METHOD'] ?? '');
+$path = (string)($_SERVER['PATH_INFO'] ?? '');
+$headers = apache_request_headers() ?: [];
 
 log_message('DEBUG', "Received: method=$method, path=$path, headers=" . print_r($headers, true));
 
@@ -18,9 +18,14 @@ if (!authTokenIsValid($headers)) {
     exit(0);
 }
 
-$path = str_ireplace('/api/moysklad/vendor/1.0/apps/', '', $path);
+$path = trim(str_ireplace('/api/moysklad/vendor/1.0/apps/', '', $path), '/');
 $pp = explode('/', $path);
-$n = count($pp);
+
+if (($pp[0] ?? '') === '' || ($pp[1] ?? '') === '') {
+    http_response_code(404);
+    exit('Invalid Vendor API path');
+}
+
 $appId = $pp[0];
 $accountId = $pp[1];
 
@@ -35,36 +40,70 @@ switch ($method) {
         log_message('DEBUG', "Request body: " . print_r($requestBody, true));
 
         $data = json_decode($requestBody);
-        $appUid = $data->appUid;
-        $accessToken = $data->access[0]->access_token;
 
-        if (!$app->getStatusName()) {
-            $app->accessToken = $accessToken;
-            $app->status = AppInstance::SETTINGS_REQUIRED;
-            $app->persist();
+        if (!is_object($data)) {
+            http_response_code(400);
+            exit('Invalid install request');
         }
+
+        if (cfg()->appUid !== '' && ($data->appUid ?? '') !== cfg()->appUid) {
+            http_response_code(400);
+            exit('Invalid appUid');
+        }
+
+        $cause = (string)($data->cause ?? '');
+        $hasRequiredSettings = trim($app->store ?? '') !== '';
+
+        // cause=Install и cause=Resume содержат access token; cause=TariffChanged и Autoprolongation — нет
+        if (!empty($data->access[0]->access_token)) {
+            $app->accessToken = (string)$data->access[0]->access_token;
+        }
+
+        if ($cause === 'Resume') {
+            $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
+        } elseif (in_array($cause, ['TariffChanged', 'Autoprolongation'], true)) {
+            // Смена тарифа не требует обновления — tariffId в БД не хранится, статус уже Activated
+        } elseif (!$app->getStatusName()) {
+            $app->status = $hasRequiredSettings ? AppInstance::ACTIVATED : AppInstance::SETTINGS_REQUIRED;
+        }
+
+        $app->persist();
 
         replyStatus($appId, $accountId, $app->getStatusName());
 
         break;
     case 'POST':
         // Обработка нажатий на кастомные кнопки
-        if ($pp[2] == 'button') {
+        if (($pp[2] ?? '') === 'button') {
             $requestBody = file_get_contents('php://input');
 
             log_message('DEBUG', "Request body: " . print_r($requestBody, true));
 
             $data = json_decode($requestBody);
 
+            if (!is_object($data)) {
+                http_response_code(400);
+                exit('Invalid button request');
+            }
+
             header("Content-Type: application/json");
 
             if (!empty($data->objectId)) {
-                echo json_encode(processDocumentButtonClick($data->buttonName, $data->extensionPoint, $data->objectId, $data->user));
-            } elseif (!empty($data->selected)) {
-                echo json_encode(processListButtonClick($data->buttonName, $data->extensionPoint, $data->selected));
+                echo json_encode(processDocumentButtonClick(
+                    (string)($data->buttonName ?? ''),
+                    (string)($data->extensionPoint ?? ''),
+                    (string)$data->objectId,
+                    $data->user ?? null
+                ));
+            } elseif (!empty($data->selected) && is_iterable($data->selected)) {
+                echo json_encode(processListButtonClick(
+                    (string)($data->buttonName ?? ''),
+                    (string)($data->extensionPoint ?? ''),
+                    $data->selected
+                ));
             }
 
-            log_message('INFO', "Button processed for appId=$appId on accountId=$accountId by user=" . print_r($data->user, true));
+            log_message('INFO', "Button processed for appId=$appId on accountId=$accountId by user=" . print_r($data->user ?? null, true));
         }
 
         break;
@@ -76,14 +115,30 @@ switch ($method) {
     case 'DELETE':
         checkAppStatus($appId, $accountId, $app->getStatusName());
 
-        $app->delete();
+        $requestBody = file_get_contents('php://input');
+        $data = json_decode($requestBody);
+        $cause = is_object($data) ? ($data->cause ?? null) : null;
 
-        log_message('INFO', "App appId=$appId deleted on accountId=$accountId");
+        switch ($cause) {
+            case 'Uninstall':
+                $app->delete();
+                log_message('INFO', "App appId=$appId deleted on accountId=$accountId, cause=$cause");
 
-        break;
+                break;
+            case 'Suspend':
+                $app->suspend();
+                log_message('INFO', "App appId=$appId suspended on accountId=$accountId, cause=$cause");
+
+                break;
+            default:
+                log_message('WARN', "Unsupported delete cause for appId=$appId on accountId=$accountId, cause=$cause");
+                http_response_code(400);
+
+                break;
+        }
 }
 
-function checkAppStatus($appId, $accountId, $status)
+function checkAppStatus(string $appId, string $accountId, ?string $status): void
 {
     if (!$status) {
         log_message('INFO', "App appId=$appId not installed on accountId=$accountId");
@@ -93,15 +148,15 @@ function checkAppStatus($appId, $accountId, $status)
     }
 }
 
-function replyStatus($appId, $accountId, $status)
+function replyStatus(string $appId, string $accountId, ?string $status): void
 {
     log_message('INFO', "App appId=$appId installed on accountId=$accountId. Status: " . $status);
     header("Content-Type: application/json");
 
-    echo '{"status": "' . $status . '"}';
+    echo json_encode(['status' => $status]);
 }
 
-function authTokenIsValid($headers): bool
+function authTokenIsValid(array $headers): bool
 {
     $auth = $headers['Authorization'] ?? $headers['authorization'] ?? null;
 
@@ -112,12 +167,12 @@ function authTokenIsValid($headers): bool
 
     $bearer = "Bearer ";
 
-    if (substr($auth, 0, 7) != $bearer) {
+    if (!str_starts_with($auth, $bearer)) {
         log_message('WARN', "Invalid auth token: $auth");
         return false;
     }
 
-    $jwtToken = str_replace($bearer, "", $auth);
+    $jwtToken = substr($auth, strlen($bearer));
     $secretKey = cfg()->secretKey;
 
     if (empty($secretKey)) {
@@ -129,14 +184,23 @@ function authTokenIsValid($headers): bool
     try {
         $decoded = JWT::decode($jwtToken, $secretKey, ["HS256"]);
 
+        if (empty($decoded->exp)) {
+            log_message('WARN', "EXP is not set");
+            return false;
+        }
+
         if (empty($decoded->jti)) {
             log_message('WARN', "JTI is not set");
             return false;
         }
 
-        // jti - является уникальным идентификатором токена.
-        // Следовательно, нужно добавить проверку что ранее не было запроса с таким значением jti в токене
-        // @link - https://dev.moysklad.ru/doc/api/vendor/1.0/#autentifikaciq-wzaimodejstwiq-po-vendor-api
+        $jti = (string)$decoded->jti;
+
+        if (!jwtRepository()->register($jti)) {
+            log_message('WARN', "JTI already used: $jti");
+            return false;
+        }
+
         return true;
     } catch (Exception $exception) {
         log_message('WARN', $exception->getMessage());

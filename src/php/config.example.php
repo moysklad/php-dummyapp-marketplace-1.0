@@ -17,4 +17,6 @@ return [
     'appUid' => getenv('APP_UID'),           // 'php-demo-app.moysklad
     'appBaseUrl' => getenv('APP_BASE_URL'),  // 'https://php-demo.testms-test.lognex.ru'
     'secretKey' => getenv('APP_SECRET_KEY'), // 'nAbioPF2HAuYvrYpOikD3LYnNTzkYGugXqRT74hUGD47BeLEY7Zo7rHM4EK0wcj4oSAycrDpbVYhO44XdmKYtTEKzepbO4g6LzfYfU7c1ILRTfcGJOPpJTMkV8mwltJx'
+    'databasePath' => getenv('APP_DB_PATH'), // '/var/www/html/src/php/data/app.sqlite'
+    'encryptKey' => getenv('APP_ENCRYPT_KEY'), // 'ed48a6a4d0c51f5d92c444e9676311742e050c41df840e1261309205d987479e'
 ];

@@ -12,6 +12,8 @@ class AppConfig
     public string $appUid = '';
     public string $secretKey = '';
     public string $appBaseUrl = '';
+    public string $databasePath = '';
+    public string $encryptKey = '';
 
     public string $moyskladVendorApiEndpointUrl = 'https://apps-api.moysklad.ru/api/vendor/1.0';
     public string $moyskladJsonApiEndpointUrl = 'https://api.moysklad.ru/api/remap/1.2';
@@ -33,6 +35,13 @@ $cfg = new AppConfig(require(__DIR__ . '/../config.php'));
 function dataDir(): string
 {
     return __DIR__ . '/../data';
+}
+
+function appDatabasePath(): string
+{
+    $configuredPath = trim(cfg()->databasePath);
+
+    return $configuredPath !== '' ? $configuredPath : dataDir() . '/app.sqlite';
 }
 
 function cfg(): AppConfig
@@ -185,7 +194,7 @@ function resolveBackendContextFromSession(): ?array
     return [
         'accountId' => $accountId,
         'uid' => $uid,
-        'isAdmin' => $context['isAdmin'],
+        'isAdmin' => normalizeIsAdmin($context['isAdmin'] ?? false),
     ];
 }
 
@@ -246,19 +255,19 @@ function trimUserContextBucket(array &$bucket): void
 class VendorApi
 {
 
-    function context(string $contextKey)
+    function context(string $contextKey): mixed
     {
         return $this->request('POST', '/context/' . $contextKey);
     }
 
-    function updateAppStatus(string $appId, string $accountId, string $status)
+    function updateAppStatus(string $appId, string $accountId, string $status): mixed
     {
         return $this->request('PUT',
             "/apps/$appId/$accountId/status",
             "{\"status\": \"$status\"}");
     }
 
-    private function request(string $method, $path, $body = null)
+    private function request(string $method, string $path, mixed $body = null): mixed
     {
         return makeHttpRequest(
             $method,
@@ -268,7 +277,7 @@ class VendorApi
     }
 }
 
-function makeHttpRequest(string $method, string $url, string $bearerToken, $data = null)
+function makeHttpRequest(string $method, string $url, string $bearerToken, mixed $data = null): mixed
 {
     $curl = curl_init($url);
 
@@ -360,14 +369,18 @@ function buildJWT(): string
 class JsonApi
 {
 
-    private $accessToken;
+    private string $accessToken;
 
     function __construct(string $accessToken)
     {
+        if (empty($accessToken)) {
+            throw new RuntimeException('JsonApi requires a valid access token. Reinstall the application.');
+        }
+
         $this->accessToken = $accessToken;
     }
 
-    function stores()
+    function stores(): mixed
     {
         return makeHttpRequest(
             'GET',
@@ -375,7 +388,7 @@ class JsonApi
             $this->accessToken);
     }
 
-    function getObject($entity, $objectId)
+    function getObject(string $entity, string $objectId): mixed
     {
         return makeHttpRequest(
             'GET',
@@ -388,7 +401,7 @@ class JsonApi
 function jsonApi(): JsonApi
 {
     if (empty($GLOBALS['jsonApi'])) {
-        $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken);
+        $GLOBALS['jsonApi'] = new JsonApi(AppInstance::get()->accessToken ?? '');
     }
 
     return $GLOBALS['jsonApi'];
@@ -403,7 +416,7 @@ const LOG_LEVELS = [
     'ERROR' => 4
 ];
 
-function log_message($level, $message)
+function log_message(string $level, string $message): void
 {
     if (LOG_LEVELS[$level] >= LOG_LEVELS[LOG_LEVEL]) {
         $log_entry = sprintf(
@@ -427,16 +440,17 @@ class AppInstance
 
     const UNKNOWN = 0;
     const SETTINGS_REQUIRED = 1;
+    const SUSPENDED = 2;
     const ACTIVATED = 100;
 
-    var $appId;
-    var $accountId;
-    var $infoMessage;
-    var $store;
+    public string $appId;
+    public string $accountId;
+    public ?string $infoMessage = null;
+    public ?string $store = null;
 
-    var $accessToken;
+    public ?string $accessToken = null;
 
-    var $status = AppInstance::UNKNOWN;
+    public int $status = AppInstance::UNKNOWN;
 
     static function get(): AppInstance
     {
@@ -449,62 +463,64 @@ class AppInstance
         return $app;
     }
 
-    public function __construct($appId, $accountId)
+    public function __construct(string $appId, string $accountId)
     {
         $this->appId = $appId;
         $this->accountId = $accountId;
     }
 
-    function getStatusName()
+    function getStatusName(): ?string
     {
-        switch ($this->status) {
-            case self::SETTINGS_REQUIRED:
-                return 'SettingsRequired';
-            case self::ACTIVATED:
-                return 'Activated';
-        }
-
-        return null;
+        return match ($this->status) {
+            self::SETTINGS_REQUIRED => 'SettingsRequired',
+            self::ACTIVATED => 'Activated',
+            default => null,
+        };
     }
 
-    function persist()
+    function persist(): void
     {
-        @mkdir(dataDir());
-        file_put_contents($this->filename(), serialize($this));
+        appInstanceRepository()->persist($this);
     }
 
-    function delete()
+    function delete(): void
     {
-        @unlink($this->filename());
+        appInstanceRepository()->delete($this->appId, $this->accountId);
     }
 
-    private function filename()
+    // Деактивирует решение, сохраняя настройки. Использовать при получении DELETE от Vendor API.
+    function suspend(): void
     {
-        return self::buildFilename($this->appId, $this->accountId);
+        appInstanceRepository()->deactivate($this->appId, $this->accountId);
     }
 
-    private static function buildFilename($appId, $accountId)
-    {
-        return dataDir() . "/$appId.$accountId.app";
-    }
-
-    static function loadApp($accountId): AppInstance
+    static function loadApp(string $accountId): AppInstance
     {
         return self::load(cfg()->appId, $accountId);
     }
 
-    static function load($appId, $accountId): AppInstance
+    static function load(string $appId, string $accountId): AppInstance
     {
-        $data = @file_get_contents(self::buildFilename($appId, $accountId));
-
-        if ($data === false) {
-            $app = new AppInstance($appId, $accountId);
-        } else {
-            $app = unserialize($data);
-        }
+        $app = appInstanceRepository()->load($appId, $accountId);
 
         $GLOBALS['currentAppInstance'] = $app;
 
         return $app;
     }
+}
+
+require_once __DIR__ . '/app-repo.php';
+require_once __DIR__ . '/jwt-repo.php';
+
+$appInstanceRepository = new AppInstanceSqliteRepository();
+$jwtRepository = new JwtSqliteRepository();
+
+function appInstanceRepository(): AppInstanceSqliteRepository
+{
+    return $GLOBALS['appInstanceRepository'];
+}
+
+function jwtRepository(): JwtSqliteRepository
+{
+    return $GLOBALS['jwtRepository'];
 }

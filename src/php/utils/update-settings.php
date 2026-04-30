@@ -25,14 +25,10 @@ $app = AppInstance::loadApp($accountId);
 $app->infoMessage = $infoMessage;
 $app->store = $store;
 
-$notify = $app->status != AppInstance::ACTIVATED;
-
 $app->status = AppInstance::ACTIVATED;
 
 // PUT идемпотентен, поэтому допустимо вызывать обновление статуса повторно.
-//if ($notify) {
 vendorApi()->updateAppStatus(cfg()->appId, $accountId, $app->getStatusName());
-//}
 
 $app->persist();
 
